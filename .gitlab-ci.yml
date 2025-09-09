@@ -1,0 +1,22 @@
+stages:
+  - validate
+
+# Future stages
+# - build
+# - push
+# - deploy
+# - cleanup
+
+pre-commit:
+  stage: validate
+  image: 
+    name: ghcr.io/antonbabenko/pre-commit-terraform:latest
+  script:
+    - echo "Running pre-commit hooks using dedicated image..."
+    - pre-commit run --all-files --show-diff-on-failure
+
+yamllint:
+  stage: validate
+  image: registry.gitlab.com/pipeline-components/yamllint:latest
+  script:
+    - yamllint .
