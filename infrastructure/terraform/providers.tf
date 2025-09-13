@@ -8,10 +8,11 @@ terraform {
 }
 
 provider "google" {
-  project = "agisit25-g20"
-  region  = "europe-southwest1"
-  zone    = "europe-southwest1-a"
+  credentials = file("agisit-2425-website-XXXXXXX.json")
+  project     = var.GCP_PROJECT_ID
+  zone        = var.GCP_ZONE
 
+  # optional
   add_terraform_attribution_label               = true
   terraform_attribution_label_addition_strategy = "PROACTIVE"
 }
