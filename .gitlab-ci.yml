@@ -11,6 +11,9 @@ pre-commit:
   stage: validate
   image: 
     name: ghcr.io/antonbabenko/pre-commit-terraform:latest
+  before_script:
+    - apt update && apt install -y --no-install-recommends git
+    - pip install -r requirements.txt
   script:
     - echo "Running pre-commit hooks using dedicated image..."
     - pre-commit run --all-files --show-diff-on-failure

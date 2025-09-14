@@ -7,4 +7,4 @@ repos:
       - id: terraform_docs
       # still not familiar with this but we'll go with it
       - id: terraform_tflint
-      - id: terraform_tfsec
+      - id: terraform_trivy
