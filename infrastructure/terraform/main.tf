@@ -1,9 +1,14 @@
 # NOTE: the alpine linux image needs to be uploaded after we create a project.
 # for now, we'll just hope the references to the image are correct
 
+data "google_secret_manager_secret_version" "ssh_key" {
+  secret = "ssh-public-key-secret-name"
+}
+
+# NOTE: always pick an odd number of workers and masters, to form a quorum
+
 ###########  Web Servers   #############
 resource "google_compute_instance" "kubernetes_worker_node" {
-  # number of nodes
   count = 3
 
   name = "worker_${count.index + 1}"
@@ -13,7 +18,7 @@ resource "google_compute_instance" "kubernetes_worker_node" {
   zone = var.GCP_ZONE
 
   metadata = {
-    ssh-keys = "alpine:${file("/home/vagrant/.ssh/id_rsa.pub")}"
+    ssh-keys = "alpine:${data.google_secret_manager_secret_version.ssh_key}"
   }
 
   boot_disk {
@@ -29,7 +34,9 @@ resource "google_compute_instance" "kubernetes_worker_node" {
     }
   }
 
-  tags = {
+  tags = ["k8s-node", "k8s-worker"]
+
+  labels = {
     Purpose        = "worker"
     Owner          = "G20"
     Environment    = "testing"
@@ -44,8 +51,15 @@ resource "google_compute_instance" "kubernetes_master_node" {
 
   machine_type = var.GCP_MACHINE_TYPE
 
+  zone = var.GCP_ZONE
+
   metadata = {
-    ssh-keys = "alpine:${file("/home/vagrant/.ssh/id_rsa.pub")}"
+    # NOTE: alternative can be to use environment variables
+    # and define a variable for it
+    # export TF_VAR_public_key_content=$(cat /home/vagrant/.ssh/id_rsa.pub) 
+    # ssh-keys = "alpine:${var.public_key_content}"
+
+    ssh-keys = "alpine:${data.google_secret_manager_secret_version.ssh_key}"
   }
 
   boot_disk {
@@ -58,8 +72,9 @@ resource "google_compute_instance" "kubernetes_master_node" {
     network = "default"
   }
 
+  tags = ["k8s-node", "k8s-master"]
 
-  tags = {
+  labels = {
     Purpose        = "master"
     Owner          = "G20"
     Environment    = "testing"
