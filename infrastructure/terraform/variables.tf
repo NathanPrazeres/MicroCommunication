@@ -1,6 +1,7 @@
 # ID of the project, find it in the GCP console when clicking 
 # on the project name (on the top dropdown)
 variable "GCP_PROJECT_ID" {
+  type    = string
   default = "AGISIT-2425-website-XXXXX-7657685"
 }
 
@@ -10,6 +11,7 @@ variable "GCP_PROJECT_ID" {
 # check the cost at: https://cloud.google.com/compute/pricing#machinetype
 # Minimum required is N1 type = "n1-standard-1, 1 vCPU, 3.75 GB RAM"
 variable "GCP_MACHINE_TYPE" {
+  type    = string
   default = "n1-standard-1"
 }
 
@@ -18,10 +20,17 @@ variable "GCP_MACHINE_TYPE" {
 # For prices of your deployment check:
 # Compute Engine dashboard -> VM instances -> Zone
 variable "GCP_ZONE" {
-  default = "europe-west3-c"
+  type    = string
+  default = "europe-southwest1-a"
+}
+
+variable "GCP_REGION" {
+  type    = string
+  default = "europe-southwest1"
 }
 
 # Minimum required
-variable "DISK_SIZE" {
-  default = "15"
-}
+# variable "DISK_SIZE" {
+#   type    = string
+#   default = "15"
+# }
