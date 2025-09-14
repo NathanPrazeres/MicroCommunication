@@ -14,9 +14,11 @@ pre-commit:
   script:
     - echo "Running pre-commit hooks using dedicated image..."
     - pre-commit run --all-files --show-diff-on-failure
+  tags: [validation]
 
 yamllint:
   stage: validate
   image: registry.gitlab.com/pipeline-components/yamllint:latest
   script:
     - yamllint .
+  tags: [validation]
