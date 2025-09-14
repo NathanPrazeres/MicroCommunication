@@ -1,24 +1,38 @@
-# NOTE: the alpine linux image needs to be uploaded after we create a project.
-# for now, we'll just hope the references to the image are correct
+resource "tls_private_key" "ssh_key" {
+  algorithm = "ED25519"
+}
 
-###########  Web Servers   #############
+resource "google_secret_manager_secret" "ssh_key_secret" {
+  secret_id = "ssh-public-key-secret-name"
+  replication {
+    auto {}
+  }
+}
+
+resource "google_secret_manager_secret_version" "ssh_key_version" {
+  secret      = google_secret_manager_secret.ssh_key_secret.id
+  secret_data = tls_private_key.ssh_key.public_key_openssh
+}
+
+# NOTE: always pick an odd number of workers and masters, to form a quorum
+
+###########  Workers   #############
 resource "google_compute_instance" "kubernetes_worker_node" {
-  # number of nodes
   count = 3
 
-  name = "worker_${count.index + 1}"
+  name = "worker-${count.index + 1}"
 
   machine_type = var.GCP_MACHINE_TYPE
 
   zone = var.GCP_ZONE
 
   metadata = {
-    ssh-keys = "alpine:${file("/home/vagrant/.ssh/id_rsa.pub")}"
+    ssh-keys = "${var.GCE_HOSTNAME}:${tls_private_key.ssh_key.public_key_openssh}"
   }
 
   boot_disk {
     initialize_params {
-      image = "alpine_linux_TODO"
+      image = var.LINUX_IMAGE
     }
   }
 
@@ -29,43 +43,54 @@ resource "google_compute_instance" "kubernetes_worker_node" {
     }
   }
 
-  tags = {
-    Purpose        = "worker"
-    Owner          = "G20"
-    Environment    = "testing"
-    AnsibleManaged = "true"
-    AutoShutdown   = "true"
+  tags = ["k8s-node", "k8s-worker"]
+
+  labels = {
+    purpose         = "worker"
+    owner           = "g20"
+    environment     = "testing"
+    ansible_managed = "true"
+    auto_shutdown   = "true"
   }
 }
 
-###########  Master   #############
+###########  Control Plane   #############
 resource "google_compute_instance" "kubernetes_master_node" {
   name = "master"
 
   machine_type = var.GCP_MACHINE_TYPE
 
+  zone = var.GCP_ZONE
+
   metadata = {
-    ssh-keys = "alpine:${file("/home/vagrant/.ssh/id_rsa.pub")}"
+    # NOTE: alternative can be to use environment variables
+    # and define a variable for it
+    # export TF_VAR_public_key_content=$(cat /home/vagrant/.ssh/id_rsa.pub)
+    # ssh-keys = "alpine:${var.public_key_content}"
+
+    ssh-keys = "${var.GCE_HOSTNAME}:${tls_private_key.ssh_key.public_key_openssh}"
   }
 
   boot_disk {
     initialize_params {
-      image = "alpine_linux_TODO"
+      image = var.LINUX_IMAGE
     }
   }
 
   network_interface {
     network = "default"
+    access_config {
+      nat_ip = google_compute_address.master_ip.address
+    }
   }
 
+  tags = ["k8s-node", "k8s-master"]
 
-  tags = {
-    Purpose        = "master"
-    Owner          = "G20"
-    Environment    = "testing"
-    AnsibleManaged = "true"
-    AutoShutdown   = "true"
+  labels = {
+    purpose         = "master"
+    owner           = "g20"
+    environment     = "testing"
+    ansible_managed = "true"
+    auto_shutdown   = "true"
   }
 }
-
-# TODO: create Ansible hosts file using the "local" provider from Terraform

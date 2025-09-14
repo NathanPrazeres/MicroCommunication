@@ -1,27 +1,41 @@
-# ID of the project, find it in the GCP console when clicking 
-# on the project name (on the top dropdown)
 variable "GCP_PROJECT_ID" {
-  default = "AGISIT-2425-website-XXXXX-7657685"
+  type        = string
+  description = "The project ID found in the GCP dashboard page under the project's name."
+  default     = "agisit-g20"
 }
 
-# A list of machine types is found at:
-# https://cloud.google.com/compute/docs/machine-types
-# prices are defined per region, before choosing an instance
-# check the cost at: https://cloud.google.com/compute/pricing#machinetype
-# Minimum required is N1 type = "n1-standard-1, 1 vCPU, 3.75 GB RAM"
 variable "GCP_MACHINE_TYPE" {
-  default = "n1-standard-1"
+  type        = string
+  description = "The machine type used to run the Kubernetes Nodes. Defaults to a small 4GB RAM machine with a 1 core vCPU."
+  default     = "e2-medium"
 }
 
-# Regions list is found at:
-# https://cloud.google.com/compute/docs/regions-zones/regions-zones?hl=en_US
-# For prices of your deployment check:
-# Compute Engine dashboard -> VM instances -> Zone
+variable "GCP_REGION" {
+  type        = string
+  description = "Region where the GCP instances will be deployed."
+  default     = "europe-southwest1"
+}
+
 variable "GCP_ZONE" {
-  default = "europe-west3-c"
+  type        = string
+  description = "Zone inside the region where the GCP instances will be deployed."
+  default     = "europe-southwest1-a"
 }
 
-# Minimum required
-variable "DISK_SIZE" {
-  default = "15"
+variable "LINUX_IMAGE" {
+  type        = string
+  description = "Linux image to be used in the GCP instances."
+  default     = "debian-12-bookworm-v20250910"
+}
+
+variable "GCE_HOSTNAME" {
+  type        = string
+  description = "Hostname of the Google Cloud Engine instance that manages VMs"
+  default     = "admin"
+}
+
+variable "CREDENTIALS_PATH" {
+  type        = string
+  description = "Path to the JSON file containing the credentials for the GCP account"
+  default     = "agisit-g20-12fb5d0f18b9.json"
 }

@@ -1,93 +1,263 @@
-# agisit25-g20
+<div align="center">
+  <h1>MicroCommunication</h1>
+  <h2>Micro-Service based communications App</h2>
+  <h3>agisit25-g20</h3>
+</div>
 
+## Development
 
+For development, the principle was to get the templates and setup **right**.
 
-## Getting started
+For this, we defined a GitLab CI that would validate and lint all our Terraform files, as well as any YAML files (since there isn't any "code" here, due to it all being IaC, this was the best way to ensure only well-formatted files, reached the repo)
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+The CI includes the [pre-commit-terraform](https://github.com/antonbabenko/pre-commit-terraform) to validate all terraform files, and [yamllint](https://github.com/adrienverge/yamllint).
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+### Pre-requisites
 
-## Add your files
+## File Structure
 
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/ee/gitlab-basics/add-file.html#add-a-file-using-the-command-line) or push an existing Git repository with the following command:
+The idea was to have a structure that would encapsulate each step in setting up the environment, so that's exactly what we did, with the names being as explicit as possible:
 
+- `application`: where the actual application is hosted, along with the code that makes up the front and back ends. This includes the Kubernetes ConfigMap since it's "part" of the application
+
+- `configuration`: this is where all the configuration scripts are hosted. They are managed by Ansible, but other tools could be hosted here
+
+- `infrastructure`: how the kubernetes nodes are provisioned. Along with that, the GCP machine specifications and networks
+
+- `monitoring`: all monitoring software used to ensure uptime and logging.
+
+```txt
+├── app
+│   ├── kubernetes
+│   ├── ui
+│   ├── redis
+│   ├── database
+│   ├── user
+│   ├── chat
+│   └── auth
+├── configuration
+│   └── ansible
+│       ├── inventory.ini
+│       ├── playbooks
+│       └── roles
+├── infrastructure
+│   └── terraform
+├── monitoring
+│   ├── grafana
+│   └── prometheus
 ```
-cd existing_repo
-git remote add origin https://gitlab.rnl.tecnico.ulisboa.pt/agisit/agisit25-g20.git
-git branch -M master
-git push -uf origin master
+
+Each folder handles its workload and sets up the work for the next layer.
+
+The workflow is the following:
+
+```mermaid
+flowchart LR
+    A[Git Repo] --"on push/merge"--> B{GitlabCI}
+    B --> C{Terraform}
+    C --> D{Ansible}
+    D --> E{ArgoCD}
+    E --> F{Kubernetes Cluster}
 ```
 
-## Integrate with your tools
+This makes sure that each layer has clear **separation of concerns**:
 
-- [ ] [Set up project integrations](https://gitlab.rnl.tecnico.ulisboa.pt/agisit/agisit25-g20/-/settings/integrations)
+### GitlabCI
 
-## Collaborate with your team
+GitlabCI is like the puppet master of the whole project.
 
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Set auto-merge](https://docs.gitlab.com/ee/user/project/merge_requests/merge_when_pipeline_succeeds.html)
+Each time main gets a commit (or merge request), GitlabCI will deploy jobs that will automatically update our infrastructure and application.
 
-## Test and Deploy
+This allows for Continuous Development, with near-instant response from the application once a feature is pushed.
 
-Use the built-in continuous integration in GitLab.
+### Terraform
 
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/index.html)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
+Terraform provisions each VM, which will act as nodes on the Kubernetes cluster.
 
-***
+Its job is very simple, it sets up the base for the kubernetes cluster:
 
-# Editing this README
+- creates the VMs using a minimal OS
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+- injects the Ansible SSH keys into the hosts
 
-## Suggestions for a good README
+- creates the GCP Firewall and internal network for the VMs to communicate
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+### Ansible
 
-## Name
-Choose a self-explaining name for your project.
+Ansible's job is to configure the machine. To turn what are simple VMs into Kubernetes Nodes, Control Planes and Workers.
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+Its job involves:
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+- installing `kubeadm`, `kubectl` and `kubelet`
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+- initializing the Control Plane(s) with `kubeadm init`
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+- creating tokens so the workers can join using `kubeadm join ...`
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+- installing a [CNI plugin](https://kubernetes.io/docs/concepts/extend-kubernetes/compute-storage-net/network-plugins/) ([Flannel](https://github.com/flannel-io/flannel), [Calico](https://www.tigera.io/project-calico/), [Weaver](https://github.com/weaveworks/weave), etc.)
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+### ArgoCD
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+ArgoCD will live in its own namespace inside the cluster, managing and installing all the apps.
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+As GitOps, ArgoCD will watch the git repository for any changes and update them to the cluster.
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+ArgoCD will:
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+- install our monitoring stack in it's designated namespace
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+- deploy our microservices (user, auth, chat, etc.)
 
-## License
-For open source projects, say how it is licensed.
+- configure and deploy our [Ingress](https://kubernetes.io/docs/concepts/services-networking/ingress/) controller
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+### Kubernetes
+
+After everything is deployed and configured, Kubernetes will manage the pods, as well as [Horizontal Scaling](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/) for services with high demand, controlling the lifetime of pods and connecting our entire architecture.
+
+## Application architecture
+
+The idea here is to have a microservice for each "service", a.k.a functionality of the application that can be self-contained and isolated in a container. They all communicate to the DB through a secure connection.
+
+To follow the design principles of kubernetes, our monitoring stack (Grafana, Prometheus, etc.) will be hosted on a different namespace than the application itself.
+
+So, we will have the following [namespaces](https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/):
+
+- `ingress`
+
+    - [Ingress Controller](#ingress-controller)
+
+- `app`
+
+    - [UI Service](#ui-service)
+
+    - [Redis Service](#redis-service)
+
+    - [Auth Service](#auth-service)
+
+    - [User Service](#user-service)
+
+    - [Chat Service](#chat-service)
+
+    - [DB Service](#db-service)
+
+- `monitoring`
+
+    - [Monitoring Service](#monitoring-service)
+
+- `argocd`
+
+    - [ArgoCD](#argocd)
+
+This allows for different RBAC for different namespaces, as well as networking and separation of concerns.
+
+The architecture will be as follows:
+
+![Architecture](./assets/cluster.svg)
+
+If time allows it, we will try to have a more production-ready approach to namespaces, separating them into:
+
+- `app-backend`: this is where the [user](#user-service), [auth](#auth-service) and [chat](#chat-service) will live
+
+- `app-frontend`: the [ui](#ui-service) will live alone in this namespace
+
+- `app-data`: the [redis](#redis-service) and [db](#db-service) components will be hosted in this namespace
+
+## Database Architecture
+
+```mermaid
+erDiagram
+    USERS {
+        UUID id PK
+        VARCHAR username
+        VARCHAR email
+        VARCHAR password_hash
+        BOOLEAN is_verified
+        BOOLEAN is_active
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+    }
+
+    USER_PROFILES {
+        UUID user_id PK
+        VARCHAR display_name
+        TEXT bio
+        VARCHAR avatar_url
+        VARCHAR status
+        VARCHAR phone_number
+        TIMESTAMP last_seen
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+    }
+
+    CONTACTS {
+        UUID user_id PK
+        UUID contact_id PK
+        VARCHAR nickname
+        TIMESTAMP added_at
+    }
+
+    ROOMS {
+        UUID id PK
+        VARCHAR name
+        VARCHAR description
+        VARCHAR room_type
+        UUID created_by FK
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+    }
+
+    ROOM_PARTICIPANTS {
+        UUID room_id FK
+        UUID user_id FK
+        VARCHAR role
+        TIMESTAMP joined_at
+        TIMESTAMP last_read_at
+    }
+
+    MESSAGES {
+        UUID id PK
+        UUID room_id FK
+        UUID sender_id FK
+        TEXT content
+        VARCHAR message_type
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+        TIMESTAMP deleted_at
+    }
+
+    MESSAGE_READS {
+        UUID message_id FK
+        UUID user_id FK
+        TIMESTAMP read_at
+    }
+
+    %% Relationships
+    USERS ||--o{ USER_PROFILES : has
+    USERS ||--o{ CONTACTS : "can add"
+    USERS ||--o{ ROOMS : "creates"
+    USERS ||--o{ ROOM_PARTICIPANTS : "joins"
+    USERS ||--o{ MESSAGES : "sends"
+
+    ROOMS ||--o{ ROOM_PARTICIPANTS : "has"
+    ROOMS ||--o{ MESSAGES : "contains"
+
+    MESSAGES ||--o{ MESSAGE_READS : "read by"
+```
+
+### Ingress Controller
+
+### UI Service
+
+### Redis Service
+
+### Auth Service
+
+### User Service
+
+### Chat Service
+
+### DB Service
+
+### Monitoring Service
+
+### ArgoCD
