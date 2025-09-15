@@ -10,7 +10,12 @@ stages:
 pre-commit:
   stage: validate
   image: 
-    name: ghcr.io/antonbabenko/pre-commit-terraform:latest
+    name: stangirard/pre-commit-terraform:0.12.29-1
+  variables:
+    PRE_COMMIT_HOME: ${CI_PROJECT_DIR}/.cache/pre-commit
+  cache:
+    paths:
+      - ${PRE_COMMIT_HOME}
   script:
     - echo "Running pre-commit hooks using dedicated image..."
     - pre-commit run --all-files --show-diff-on-failure

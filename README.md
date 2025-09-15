@@ -49,4 +49,18 @@ Each folder handles its workload and setup up the work for the next layer.
 
 The workflow is the following:
 
+TODO
 
+## Application architecture
+
+The idea here is to have a microservice for each "service", a.k.a functionality of the application that can be self-contained and isolated in a container. They all communicate to the DB through a secure connection.
+
+Each microservice will correspond to:
+
+- Message Queueing
+
+- Authentication
+
+- User Actions
+
+- Chat Actions
