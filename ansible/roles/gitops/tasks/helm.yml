@@ -1,0 +1,34 @@
+---
+- name: Ensure helm is installed
+  stat:
+    path: /usr/local/bin/helm
+  register: helm_stat
+
+- name: Install Helm (if not installed)
+  get_url:
+    url: "https://get.helm.sh/helm-v3.19.0-linux-amd64.tar.gz"
+    dest: /tmp/helm.tar.gz
+    mode: '0644'
+  when: not helm_stat.stat.exists
+
+- name: Extract Helm binary
+  unarchive:
+    src: /tmp/helm.tar.gz
+    dest: /tmp
+    remote_src: yes
+  when: not helm_stat.stat.exists
+
+- name: Move Helm binary to /usr/local/bin
+  copy:
+    src: /tmp/linux-amd64/helm
+    dest: /usr/local/bin/helm
+    remote_src: yes
+  when: not helm_stat.stat.exists
+
+- name: Ensure Helm binary is executable
+  ansible.builtin.file:
+    path: /usr/local/bin/helm
+    mode: '0755'
+    owner: root
+    group: root
+  when: not helm_stat.stat.exists

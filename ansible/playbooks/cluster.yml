@@ -1,0 +1,22 @@
+---
+- name: Configure Kubernetes Control Plane
+  hosts: _master
+  become: true
+  roles:
+    - control-plane
+  tags:
+    - master
+
+- name: Configure Kubernetes Workers
+  hosts: _worker
+  become: true
+  roles:
+    - worker
+  tags:
+    - worker
+
+- name: Configure GitOps
+  hosts: _master
+  become: true
+  roles:
+    - gitops

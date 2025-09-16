@@ -1,0 +1,6 @@
+---
+- name: Configure GitOps
+  hosts: _master
+  become: true
+  roles:
+    - gitops

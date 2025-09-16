@@ -1,0 +1,16 @@
+---
+- name: Create temporary directory for manifests
+  file:
+    path: /tmp/k8s-bootstrap
+    state: directory
+    mode: 0755
+
+- include_tasks: helm.yml
+
+- include_tasks: argocd.yml
+  when: install_argocd | default(true)
+
+- name: Clean up temporary directory
+  file:
+    path: /tmp/k8s-bootstrap
+    state: absent

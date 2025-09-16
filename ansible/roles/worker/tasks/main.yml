@@ -1,0 +1,45 @@
+---
+- include_tasks: setup.yml
+
+- name: Install Kubernetes packages
+  package:
+    name: "{{ kubernetes_packages }}"
+    state: "{{ kubernetes_packages_state }}"
+  notify: restart kubelet
+
+- include_tasks: sysctl-setup.yml
+
+- name: Ensure kubelet is started and enabled at boot.
+  service:
+    name: kubelet
+    state: started
+    enabled: true
+
+- name: Check if worker already joined
+  stat:
+    path: /etc/kubernetes/kubelet.conf
+  register: worker_joined
+
+- name: Define the master host for join command lookup
+  # Set a variable to the name of the master host for easier reading/maintenance
+  ansible.builtin.set_fact:
+    master_host: "{{ groups['_master'][0] }}"
+  run_once: true
+
+- name: Construct the final kubeadm join command
+  ansible.builtin.set_fact:
+    # Use hostvars to pull the stdout from the master node's previous task execution
+    kubeadm_join_command: >
+      {{ hostvars[master_host].kubernetes_join_command_result.stdout }}
+      {{ kubernetes_join_command_extra_opts | default('') }}
+
+- name: Join the worker node to the Kubernetes cluster
+  ansible.builtin.command: "{{ kubeadm_join_command }}"
+  when: not worker_joined.stat.exists
+  register: kubeadm_join_result
+
+- name: Print join result
+  debug:
+    var: kubeadm_join_result.stdout
+    verbosity: 2
+  when: not worker_joined.stat.exists

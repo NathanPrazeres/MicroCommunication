@@ -1,0 +1,4 @@
+- name: Deploy Monitoring tools
+  hosts: _master
+  roles:
+    - monitoring

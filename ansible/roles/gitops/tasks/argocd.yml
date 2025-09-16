@@ -1,0 +1,201 @@
+---
+- name: Create ArgoCD namespace
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: argocd
+
+# - name: Create ArgoCD namespace
+#   kubernetes.core.k8s:
+#     state: present
+#     src: "{{ argocd_manifests_path }}/argocd/namespace.yaml"
+
+# - name: Download ArgoCD installation manifest
+#   get_url:
+#     url: "{{ argocd_manifest_url | default('https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml') }}"
+#     dest: /tmp/k8s-bootstrap/argocd-install.yaml
+#     mode: 0644
+
+- name: Add ArgoCD Helm repository
+  kubernetes.core.helm_repository:
+    name: argo
+    repo_url: https://argoproj.github.io/argo-helm
+
+# - name: Install ArgoCD
+#   kubernetes.core.k8s:
+#     state: present
+#     src: /tmp/k8s-bootstrap/argocd-install.yaml
+#     namespace: argocd
+#     wait: yes
+#     wait_timeout: 300
+
+# - name: Install ArgoCD
+#   kubernetes.core.k8s:
+#     state: present
+#     src: "{{ argocd_install_manifest }}"
+#     wait: yes
+#     wait_timeout: 300
+
+- name: Install ArgoCD via Helm
+  kubernetes.core.helm:
+    name: argocd
+    chart_ref: argo/argo-cd
+    release_namespace: argocd
+    create_namespace: false
+    values:
+      global:
+        domain: argocd.local
+
+      server:
+        service:
+          type: ClusterIP
+
+      # Helm support is enabled by default in the chart
+      repoServer:
+        env:
+          - name: ARGOCD_EXEC_TIMEOUT
+            value: "5m"
+    wait: true
+    wait_timeout: 10m
+
+- name: Wait for ArgoCD server to be ready
+  kubernetes.core.k8s_info:
+    kind: Deployment
+    namespace: argocd
+    label_selectors:
+      - app.kubernetes.io/part-of=argocd
+    name: argocd-server
+    wait: yes
+    wait_condition:
+      type: Available
+      status: True
+    wait_timeout: 600
+  register: argocd_deploy
+  until: argocd_deploy is succeeded
+  retries: 3
+  delay: 10
+
+- name: Wait for ArgoCD application controller to be ready
+  kubernetes.core.k8s_info:
+    kind: Stateful-Set
+    name: argocd-application-controller
+    namespace: argocd
+    wait: yes
+    wait_condition:
+      type: Available
+      status: True
+    wait_timeout: 600
+
+- name: Wait for ArgoCD repo server to be ready
+  kubernetes.core.k8s_info:
+    kind: Deployment
+    name: argocd-repo-server
+    namespace: argocd
+    wait: yes
+    wait_condition:
+      type: Available
+      status: True
+    wait_timeout: 600
+
+- name: Wait for ArgoCD Application CRD to be available
+  kubernetes.core.k8s_info:
+    api_version: apiextensions.k8s.io/v1
+    kind: CustomResourceDefinition
+    name: applications.argoproj.io
+  register: argocd_crd
+  retries: 30
+  delay: 5
+  until: argocd_crd.resources | length > 0
+
+- name: Get ArgoCD admin password
+  kubernetes.core.k8s_info:
+    kind: Secret
+    name: argocd-initial-admin-secret
+    namespace: argocd
+  register: argocd_secret
+  retries: 10
+  delay: 5
+  until: argocd_secret.resources | length > 0
+
+- name: Display ArgoCD password for logging
+  set_fact:
+    argocd_admin_password: "{{ argocd_secret.resources[0].data.password | b64decode }}"
+  when: argocd_secret.resources | length > 0
+
+# - name: Add private Git repo credentials to ArgoCD
+#   kubernetes.core.k8s:
+#     state: present
+#     definition: "{{ lookup('file', 'templates/argocd-repo-secret.yaml.j2') }}"
+
+- name: Read SSH private key
+  set_fact:
+    ssh_private_key: "{{ lookup('file', argocd_repo_ssh_key_path) }}"
+  when: argocd_repo_ssh_key_path is defined
+  no_log: true
+
+- name: Create repository secret with SSH key
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: private-repo
+        namespace: argocd
+        labels:
+          argocd.argoproj.io/secret-type: repository
+      type: Opaque
+      stringData:
+        type: git
+        url: "git@gitlab.rnl.tecnico.ulisboa.pt:{{ git_repo_org }}/{{ argocd_repo_name }}.git"
+        sshPrivateKey: "{{ ssh_private_key }}"
+  when: argocd_repo_ssh_key_path is defined
+  no_log: true
+
+- name: Wait a few seconds for repository to be registered
+  pause:
+    seconds: 10
+
+# - name: Deploy ArgoCD Application
+#   kubernetes.core.k8s:
+#     state: present
+#     definition: "{{ lookup('template', 'templates/argocd-app-of-apps.yml.j2') }}"
+
+- name: Deploy root Application (App of Apps)
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: argoproj.io/v1alpha1
+      kind: Application
+      metadata:
+        name: root
+        namespace: argocd
+        finalizers:
+          - resources-finalizer.argocd.argoproj.io
+      spec:
+        project: default
+        source:
+          repoURL: "https://gitlab.rnl.tecnico.ulisboa.pt/{{ git_repo_org }}/{{ argocd_repo_name }}.git"
+          targetRevision: main
+          path: "{{ argocd_apps_path | default('argocd-apps') }}"
+        destination:
+          server: https://kubernetes.default.svc
+          namespace: argocd
+        syncPolicy:
+          automated:
+            prune: true
+            selfHeal: true
+
+- name: Wait for root application to be created
+  kubernetes.core.k8s_info:
+    api_version: argoproj.io/v1alpha1
+    kind: Application
+    name: root
+    namespace: argocd
+  register: root_app
+  retries: 5
+  delay: 5
+  until: root_app.resources | length > 0

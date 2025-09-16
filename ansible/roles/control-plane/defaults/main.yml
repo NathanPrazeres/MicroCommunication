@@ -1,0 +1,50 @@
+---
+kubernetes_packages:
+  - "kubelet"
+  - "kubeadm"
+  - "kubectl"
+
+kubernetes_packages_state: present
+kubernetes_version: '1.34' # most recent version as of September 2025
+
+kubernetes_version_kubeadm: 'stable-{{ kubernetes_version }}'
+
+kubernetes_config_file_path: '/etc/kubernetes/config.yaml'
+
+kubernetes_kubeadm_init_extra_opts: ""
+
+kubernetes_ignore_preflight_errors: 'all'
+
+kubernetes_config_kubeadm_apiversion: v1beta4
+kubenetes_config_kubelet_apiversion: v1beta1
+kubernetes_config_kubeproxy_apiversion: v1alpha1
+
+kubernetes_config_kube_proxy_configuration: {}
+
+kubernetes_apiserver_advertise_address: ''
+
+kubernetes_config_init_configuration:
+  localAPIEndpoint:
+    advertiseAddress: "{{ kubernetes_apiserver_advertise_address | default(ansible_default_ipv4.address, true) }}"
+
+kubernetes_pod_network:
+  # Calico CNI.
+  cni: 'calico'
+  cidr: '192.168.0.0/16'
+
+kubernetes_config_cluster_configuration:
+  networking:
+    podSubnet: "{{ kubernetes_pod_network.cidr }}"
+  kubernetesVersion: "{{ kubernetes_version_kubeadm }}"
+
+kubernetes_config_kubelet_configuration:
+  cgroupDriver: "systemd"
+
+# Flannel config file.
+kubernetes_flannel_manifest_file: https://raw.githubusercontent.com/flannel-io/flannel/master/Documentation/kube-flannel.yml
+
+# Calico config file.
+kubernetes_calico_manifest_file: https://projectcalico.docs.tigera.io/manifests/calico.yaml
+
+kubernetes_apt_release_channel: "stable"
+kubernetes_apt_repository: "https://pkgs.k8s.io/core:/{{ kubernetes_apt_release_channel }}:/v{{ kubernetes_version }}/deb/"

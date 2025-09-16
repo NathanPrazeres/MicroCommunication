@@ -1,0 +1,45 @@
+---
+- include_tasks: setup.yml
+
+- name: Install Kubernetes packages
+  package:
+    name: "{{ kubernetes_packages }}"
+    state: "{{ kubernetes_packages_state }}"
+  notify: restart kubelet
+
+- include_tasks: sysctl-setup.yml
+
+- name: Ensure kubelet is started and enabled at boot.
+  service:
+    name: kubelet
+    state: started
+    enabled: true
+
+- name: Check if Kubernetes has already been initialized.
+  stat:
+    path: /etc/kubernetes/admin.conf
+  register: kubernetes_init_stat
+
+- include_tasks: control-plane-setup.yml
+
+- name: Get the kubeadm join command from the Kubernetes control plane.
+  command: kubeadm token create --print-join-command
+  changed_when: false
+  register: kubernetes_join_command_result
+
+# - name: Get CA cert hash
+#   shell: >
+#     openssl x509 -pubkey -in /etc/kubernetes/pki/ca.crt |
+#     openssl rsa -pubin -outform der 2>/dev/null |
+#     openssl dgst -sha256 -hex | sed 's/^.* //'
+#   register: ca_cert_hash
+#   run_once: true
+#   changed_when: false
+#
+# - name: Build kubeadm join command
+#   set_fact:
+#     kubeadm_join_command: >
+#       kubeadm join {{ kube_control_plane_endpoint }}:6443
+#       --token {{ kubeadm_token.stdout }}
+#       --discovery-token-ca-cert-hash sha256:{{ ca_cert_hash.stdout }}
+#   run_once: true
