@@ -57,10 +57,30 @@ The idea here is to have a microservice for each "service", a.k.a functionality 
 
 Each microservice will correspond to:
 
-- Message Queueing
+- [Redis Service](#redis-service)
 
-- Authentication
+- [Auth Service](#auth-service)
 
-- User Actions
+- [User Service](#user-service)
 
-- Chat Actions
+- [Message Service](#message-service)
+
+- [Delivery Service](#delivery-service)
+
+- [DB Service](#db-service)
+
+The architecture will be as follows:
+
+![Architecture](./assets/cluster.svg)
+
+### Redis Service
+
+### Auth Service
+
+### User Service
+
+### Message Service
+
+### Delivery Service
+
+### DB Service
