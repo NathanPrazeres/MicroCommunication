@@ -1,0 +1,122 @@
+services:
+  # PostgreSQL - Shared database for Keycloak and User Service
+  postgres:
+    image: postgres:15-alpine
+    container_name: postgres
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    ports:
+      - 5432:5432
+    networks:
+      - dev-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Keycloak - Authentication & Authorization Service
+  keycloak:
+    image: quay.io/keycloak/keycloak:25.0
+    container_name: keycloak-dev
+    command: start-dev --import-realm
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
+      KC_DB_USERNAME: admin
+      KC_DB_PASSWORD: admin
+      KC_HEALTH_ENABLED: true
+      KC_METRICS_ENABLED: true
+      KC_HTTP_MANAGEMENT_PORT: 9000
+    ports:
+      - 8080:8080
+      - 9000:9000
+    networks:
+      - dev-network
+    volumes:
+      - ./app-realm.json:/opt/keycloak/data/import/app-realm.json:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # Redis - Caching Layer
+  redis:
+    image: redis:7-alpine
+    container_name: dev-redis
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - dev-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # User Service - Rust/Axum microservice
+  user-service:
+    build:
+      context: .
+    container_name: user-service
+    environment:
+      # Database
+      DATABASE_URL: postgres://admin:admin@postgres:5432/user_service
+
+      # Redis
+      REDIS_URL: redis://redis:6379
+      REDIS_TTL_SECONDS: 3600
+      REDIS_CACHE_ENABLED: true
+
+      # Keycloak
+      KEYCLOAK_URL: http://keycloak:8080
+      KEYCLOAK_REALM: dev
+
+      # Service config
+      SERVICE_PORT: 3000
+      RUST_LOG: info
+      RUST_BACKTRACE: 1
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      keycloak:
+        condition: service_started
+    networks:
+      - dev-network
+    restart: unless-stopped
+
+  # Redis Commander - Optional GUI for Redis debugging
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: redis-commander
+    environment:
+      REDIS_HOSTS: local:redis:6379
+    ports:
+      - "8081:8081"
+    depends_on:
+      - redis
+    networks:
+      - dev-network
+    profiles:
+      - debug
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  dev-network:
+    driver: bridge

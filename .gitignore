@@ -1,4 +1,7 @@
 # Taken from Github's .gitignore guide:
+
+**/target/**
+
 # https://github.com/github/gitignore/blob/main/Terraform.gitignore
 
 # Local .terraform directories
@@ -45,3 +48,5 @@ terraform.rc
 # Optional: ignore plan files saved before destroying Terraform configuration
 # Uncomment the line below if you want to ignore planout files.
 # planout
+.DS_Store
+local-testing/

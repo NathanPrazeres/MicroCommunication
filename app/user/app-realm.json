@@ -1,0 +1,92 @@
+	{
+		"realm": "app",
+		"enabled": true,
+		"displayName": "Microservice Chat",
+		"registrationAllowed": true,
+		"rememberMe": true,
+		"loginWithEmailAllowed": true,
+		"duplicateEmailsAllowed": false,
+		"resetPasswordAllowed": false,
+		"editUsernameAllowed": false,
+		"bruteForceProtected": true,
+		"permanentLockout": false,
+		"failureFactor": 5,
+		"clients": [
+			{
+				"clientId": "user-service",
+				"enabled": true,
+				"clientAuthenticatorType": "client-secret",
+				"secret": "user-service",
+				"serviceAccountsEnabled": true,
+				"authorizationServicesEnabled": false,
+				"standardFlowEnabled": false,
+				"implicitFlowEnabled": false,
+				"directAccessGrantsEnabled": false,
+				"publicClient": false,
+				"protocol": "openid-connect",
+				"redirectUris": [
+					"*"
+				]
+			},
+			{
+				"clientId": "chat-service",
+				"enabled": true,
+				"clientAuthenticatorType": "client-secret",
+				"secret": "chat-service",
+				"serviceAccountsEnabled": true,
+				"authorizationServicesEnabled": false,
+				"standardFlowEnabled": false,
+				"implicitFlowEnabled": false,
+				"directAccessGrantsEnabled": false,
+				"publicClient": false,
+				"protocol": "openid-connect",
+				"redirectUris": [
+					"*"
+				]
+			},
+			{
+				"clientId": "ui-service",
+				"enabled": true,
+				"publicClient": true,
+				"standardFlowEnabled": true,
+				"implicitFlowEnabled": false,
+				"directAccessGrantsEnabled": true,
+				"protocol": "openid-connect",
+				"redirectUris": [
+					"*"
+				],
+				"webOrigins": [
+					"*"
+				]
+			}
+		],
+		"users": [
+			{
+				"username": "admin",
+				"enabled": true,
+				"emailVerified": true,
+				"credentials": [
+					{
+						"type": "password",
+						"value": "admin"
+					}
+				],
+				"realmRoles": [
+					"admin"
+				]
+			}
+		],
+		"roles": {
+			"realm": [
+				{
+					"name": "admin"
+				},
+				{
+					"name": "user"
+				}
+			]
+		},
+		"defaultRoles": [
+			"user"
+		]
+	}
