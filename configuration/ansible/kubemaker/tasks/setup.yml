@@ -25,7 +25,4 @@
   template:
     src: apt-preferences-kubernetes.j2
     dest: /etc/apt/preferences.d/kubernetes
-    mode: 0644
-
-- include_tasks: control-plane-setup.yml
-  when: kubernetes_role == 'control_plane'
+    mode: 0644 # group/others can read, user can read and write
