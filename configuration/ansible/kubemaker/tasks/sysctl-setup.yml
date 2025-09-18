@@ -1,4 +1,5 @@
 ---
+# necessary for kubernetes
 - name: Ensure br_netfilter is loaded
   modprobe:
     name: br_netfilter
