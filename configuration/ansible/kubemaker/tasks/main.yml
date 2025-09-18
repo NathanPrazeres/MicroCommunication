@@ -1,3 +1,24 @@
 #SPDX-License-Identifier: MIT-0
 ---
 # tasks file for kubemaker
+
+- name: Install Kubernetes packages
+  package:
+    name: "{{ kubernetes_packages }}"
+    state: "{{ kubernetes_packages_state }}"
+
+- name: Ensure Kubelet is started and enabled at boot.
+  service:
+    name: kubelet
+    state: started
+    enabled: true
+
+- name: Check if Kubernetes has already been initialized.
+  stat:
+    path: /etc/kubernetes/admin.conf
+  register: kubernetes_init_stat
+
+- include_tasks: control-plane-setup.yml
+  when: kubernetes_role == 'control_plane'
+
+------------------------------------------------------------ -------------------
