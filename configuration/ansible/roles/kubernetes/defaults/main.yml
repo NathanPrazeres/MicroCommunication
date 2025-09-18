@@ -12,5 +12,7 @@ kubernetes_config_file_path: '/etc/kubernetes/config.yaml'
 
 kubernetes_kubeadm_init_extra_opts: ""
 
+kubernetes_ignore_preflight_errors: 'all'
+
 kubernetes_config_kubelet_configuration:
   cgroupDriver: "systemd"
