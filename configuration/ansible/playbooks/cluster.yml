@@ -1,0 +1,12 @@
+---
+- name: Configure Kubernetes Control Plane
+  hosts: role_master
+  become: true
+  roles:
+    - control-plane
+
+- name: Configure Kubernetes Workers
+  hosts: role_worker
+  become: true
+  roles:
+    - worker

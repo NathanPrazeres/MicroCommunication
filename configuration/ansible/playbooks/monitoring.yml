@@ -1,0 +1,5 @@
+# TODO: does it need sudo?
+- name: Deploy Monitoring tools
+  hosts: role_master
+  roles:
+    - monitoring
