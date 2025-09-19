@@ -21,15 +21,6 @@
     path: /etc/kubernetes/admin.conf
   register: kubernetes_init_stat
 
-- include_tasks: control-plane-setup.yml
-  when: kubernetes_role == 'control_plane'
-
-- name: Get the kubeadm join command from the Kubernetes control plane.
-  command: kubeadm token create --print-join-command
-  changed_when: false
-  when: kubernetes_role == 'control_plane'
-  register: kubernetes_join_command_result
-
 - name: Set the kubeadm join command globally.
   set_fact:
     kubernetes_join_command: >
@@ -41,4 +32,3 @@
   with_items: "{{ groups['all'] }}"
 
 - include_tasks: node-setup.yml
-  when: kubernetes_role == 'node'
