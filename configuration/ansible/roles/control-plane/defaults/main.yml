@@ -16,3 +16,9 @@ kubernetes_ignore_preflight_errors: 'all'
 
 kubernetes_config_kubelet_configuration:
   cgroupDriver: "systemd"
+
+# Flannel config file.
+kubernetes_flannel_manifest_file: https://raw.githubusercontent.com/flannel-io/flannel/master/Documentation/kube-flannel.yml
+
+# Calico config file.
+kubernetes_calico_manifest_file: https://projectcalico.docs.tigera.io/manifests/calico.yaml

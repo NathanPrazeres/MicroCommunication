@@ -23,17 +23,16 @@
 
 - include_tasks: control-plane-setup.yml
 
-- name: Get the kubeadm join command from the Kubernetes control plane.
-  command: kubeadm token create --print-join-command
-  changed_when: false
-  register: kubernetes_join_command_result
+- name: Ensure a non-expiring kubeadm token exists
+  command: kubeadm token create --ttl 0 --description "ansible-bootstrap"
+  register: kubeadm_token
+  changed_when: "'token already exists' not in kubeadm_token.stderr"
+  run_once: true
 
-- name: Set the kubeadm join command globally.
+- name: Build kubeadm join command
   set_fact:
-    kubernetes_join_command: >
-      {{ kubernetes_join_command_result.stdout }}
-      {{ kubernetes_join_command_extra_opts }}
-  when: kubernetes_join_command_result.stdout is defined
-  delegate_to: "{{ item }}"
-  delegate_facts: true
-  with_items: "{{ groups['all'] }}"
+    kubeadm_join_command: >
+      kubeadm join {{ kube_control_plane_endpoint }}:6443
+      --token {{ kubeadm_token.stdout }}
+  delegate_to: localhost
+  run_once: true

@@ -1,3 +1,13 @@
-#SPDX-License-Identifier: MIT-0
----
-# tasks file for monitoring
+- name: Add prometheus-community Helm repo
+  command: helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+  args:
+    creates: ~/.cache/helm/repository/prometheus-community-index.yaml
+
+- name: Update Helm repos
+  command: helm repo update
+
+- name: Install kube-prometheus-stack
+  command: >
+    helm upgrade --install monitoring prometheus-community/kube-prometheus-stack
+    --namespace monitoring --create-namespace
+    --set grafana.adminPassword={{ grafana_admin_password }}

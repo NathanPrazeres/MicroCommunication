@@ -16,19 +16,11 @@
     state: started
     enabled: true
 
-- name: Check if Kubernetes has already been initialized.
+- name: Check if worker already joined
   stat:
-    path: /etc/kubernetes/admin.conf
-  register: kubernetes_init_stat
+    path: /etc/kubernetes/kubelet.conf
+  register: worker_joined
 
-- name: Set the kubeadm join command globally.
-  set_fact:
-    kubernetes_join_command: >
-      {{ kubernetes_join_command_result.stdout }}
-      {{ kubernetes_join_command_extra_opts }}
-  when: kubernetes_join_command_result.stdout is defined
-  delegate_to: "{{ item }}"
-  delegate_facts: true
-  with_items: "{{ groups['all'] }}"
-
-- include_tasks: node-setup.yml
+- name: Join the node to the cluster
+  command: "{{ hostvars[groups['control_plane'][0]].kubeadm_join_command }}"
+  when: not worker_joined.stat.exists
