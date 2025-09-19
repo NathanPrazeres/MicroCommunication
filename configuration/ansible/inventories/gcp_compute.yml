@@ -1,0 +1,14 @@
+plugin: google.cloud.gcp_compute
+zones: 
+  - europe-southwest1-a
+projects:
+  - agisit-g20
+auth_kind: serviceaccount
+service_account_file: /tmp/service-account.json
+filters:
+  - status = RUNNING
+keyed_groups:
+  # should be changed when we see the final labels once we merge branch 3
+  - key: labels.Purpose
+compose:
+  ansible_host: networkInterfaces[0].accessConfigs[0].natIP
