@@ -44,3 +44,39 @@
     dest: ~/.kube/config
     state: link
     mode: 0644 # readable to group and others, user can read and write
+
+### CNI SETUP
+- name: Configure Flannel networking.
+  command: "kubectl apply -f {{ kubernetes_flannel_manifest_file }}"
+  register: flannel_result
+  changed_when: "'created' in flannel_result.stdout"
+  when: kubernetes_pod_network.cni == 'flannel'
+  until: flannel_result is not failed
+  retries: 12
+  delay: 5
+
+- name: Configure Calico networking.
+  command: "kubectl apply -f {{ kubernetes_calico_manifest_file }}"
+  register: calico_result
+  changed_when: "'created' in calico_result.stdout"
+  when: kubernetes_pod_network.cni == 'calico'
+  until: calico_result is not failed
+  retries: 12
+  delay: 5
+
+- name: Get Kubernetes version for Weave installation.
+  shell: kubectl version | base64 | tr -d '\n'
+  changed_when: false
+  register: kubectl_version
+  when: kubernetes_pod_network.cni == 'weave'
+  until: kubectl_version is not failed
+  retries: 12
+  delay: 5
+
+- name: Configure Weave networking.
+  command: "{{ item }}"
+  with_items:
+    - "kubectl apply -f https://cloud.weave.works/k8s/net?k8s-version={{ kubectl_version.stdout_lines[0] }}"
+  register: weave_result
+  changed_when: "'created' in weave_result.stdout"
+  when: kubernetes_pod_network.cni == 'weave'
