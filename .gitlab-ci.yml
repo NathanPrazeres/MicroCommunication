@@ -1,28 +1,26 @@
+---
 stages:
-  - validate
+  - lint
+  - build
+  - test
+  - deploy
+  # - cleanup
 
-# Future stages
-# - build
-# - push
-# - deploy
-# - cleanup
-
-pre-commit:
-  stage: validate
-  image: 
-    name: stangirard/pre-commit-terraform:0.12.29-1
-  variables:
-    PRE_COMMIT_HOME: ${CI_PROJECT_DIR}/.cache/pre-commit
-  cache:
-    paths:
-      - ${PRE_COMMIT_HOME}
-  script:
-    - echo "Running pre-commit hooks using dedicated image..."
-    - pre-commit run --all-files --show-diff-on-failure
-  tags: [validation]
+# pre-commit:
+#   stage: lint
+#   image:
+#     name: ghcr.io/antonbabenko/pre-commit-terraform:v1.100.0
+#   variables:
+#     PRE_COMMIT_HOME: ${CI_PROJECT_DIR}/.cache/pre-commit
+#   cache:
+#     paths:
+#       - ${PRE_COMMIT_HOME}
+#   script:
+#     - run --all-files --show-diff-on-failure
+#   tags: [validation]
 
 yamllint:
-  stage: validate
+  stage: lint
   image: registry.gitlab.com/pipeline-components/yamllint:latest
   script:
     - yamllint .
