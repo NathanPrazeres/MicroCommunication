@@ -1,0 +1,67 @@
+---
+deployment:
+  replicas: 0
+
+service:
+  type: NodePort # LoadBalancer  # or NodePort for local
+
+# ports:
+#   web:
+#     port: 80
+#     expose:
+#       port: 8080
+#     redirections:
+#       entryPoint:
+#         to: websecure
+#         scheme: https
+#         permanent: true
+#   websecure:
+#     port: 443
+#     expose:
+#       port: 8443
+#   traefik:
+#     port: 9000
+
+# Enables the dashboard in Secure Mode
+api:
+  dashboard: true
+  insecure: true
+
+ingressRoute:
+  dashboard:
+    enabled: true
+    matchRule: Host(`traefik.app.local`)
+    entryPoints: ["web"]
+
+logs:
+  general:
+    level: INFO
+  access:
+    enabled: true
+
+metrics:
+  prometheus:
+    enabled: true
+    entryPoint: metrics
+    # serviceMonitor:
+    #   enabled: true
+    #   namespace: monitoring
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 50Mi
+  limits:
+    cpu: 300m
+    memory: 150Mi
+
+autoscaling:
+  enabled: true
+  maxReplicas: 2
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 80

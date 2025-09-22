@@ -1,0 +1,60 @@
+---
+global:
+  domain: argocd.app.local
+
+server:
+  ingress:
+    enabled: true
+    ingressClassName: traefik
+    annotations:
+      traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+    hosts:
+      - argocd.app.local
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
+controller:
+  resources:
+    requests:
+      cpu: 250m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+repoServer:
+  env:
+    - name: KUSTOMIZE_ENABLE_HELM
+      value: "true"
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
+redis:
+  enabled: true
+
+controller:
+  replicas: 1  # Set to 3 for HA
+
+metrics:
+  enabled: true
+  entryPoint: metrics
+  serviceMonitor:
+    enabled: true
+    namespace: monitoring
+
+notifications:
+  enabled: false
+
+applicationSet:
+  enabled: true

@@ -8,4 +8,4 @@ argocd_repo_ssh_key_path: "~/.ssh/gitlab_ist"
 
 git_repo_org: "agisit"
 argocd_repo_name: "agisit25-g20"
-argocd_apps_path: "k8s-manifests"
+argocd_apps_path: "argocd-apps"

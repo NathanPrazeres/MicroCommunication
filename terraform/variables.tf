@@ -37,7 +37,7 @@ variable "GCE_HOSTNAME" {
 variable "CREDENTIALS_PATH" {
   type        = string
   description = "Path to the JSON file containing the credentials for the GCP account"
-  default     = "agisit-g20-12fb5d0f18b9.json"
+  default     = "~/service-account.json"
 }
 
 # Minimum required

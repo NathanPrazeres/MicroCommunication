@@ -1,4 +1,4 @@
 - name: Installing Helm on CI VM
-  hosts: _master
+  hosts: _ci
   roles:
     - helm

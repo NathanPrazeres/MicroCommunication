@@ -4,7 +4,7 @@ zones:
 projects:
   - agisit-g20
 auth_kind: serviceaccount
-service_account_file: /tmp/service-account.json
+service_account_file: ~/service-account.json
 filters:
   - status = RUNNING
 keyed_groups:

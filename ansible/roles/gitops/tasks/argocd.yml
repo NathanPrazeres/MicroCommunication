@@ -136,6 +136,27 @@
   when: argocd_repo_ssh_key_path is defined
   no_log: true
 
+- name: Get GitLab SSH host keys
+  shell: ssh-keyscan gitlab.rnl.tecnico.ulisboa.pt
+  register: gitlab_host_keys
+  changed_when: false
+
+- name: Create/Update ArgoCD SSH known hosts ConfigMap
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        name: argocd-ssh-known-hosts-cm
+        namespace: argocd
+        labels:
+          app.kubernetes.io/name: argocd-cm
+          app.kubernetes.io/part-of: argocd
+      data:
+        ssh_known_hosts: |
+          {{ gitlab_host_keys.stdout }}
+
 - name: Create repository secret with SSH key
   kubernetes.core.k8s:
     state: present
@@ -151,18 +172,37 @@
       stringData:
         type: git
         url: "git@gitlab.rnl.tecnico.ulisboa.pt:{{ git_repo_org }}/{{ argocd_repo_name }}.git"
-        sshPrivateKey: "{{ ssh_private_key }}"
+        sshPrivateKey: |
+          {{ ssh_private_key }}
   when: argocd_repo_ssh_key_path is defined
   no_log: true
 
-- name: Wait a few seconds for repository to be registered
-  pause:
-    seconds: 10
+- name: Restart ArgoCD repo-server to pick up new known hosts
+  kubernetes.core.k8s:
+    state: absent
+    api_version: v1
+    kind: Pod
+    namespace: argocd
+    label_selectors:
+      - app.kubernetes.io/name=argocd-repo-server
+  when: gitlab_host_keys.changed
 
-# - name: Deploy ArgoCD Application
-#   kubernetes.core.k8s:
-#     state: present
-#     definition: "{{ lookup('template', 'templates/argocd-app-of-apps.yml.j2') }}"
+- name: Wait for repo-server to restart
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: Pod
+    namespace: argocd
+    label_selectors:
+      - app.kubernetes.io/name=argocd-repo-server
+    wait: yes
+    wait_condition:
+      type: Ready
+      status: "True"
+    wait_timeout: 120
+
+- name: Wait for repository to be registered
+  pause:
+    seconds: 15
 
 - name: Deploy root Application (App of Apps)
   kubernetes.core.k8s:
@@ -178,8 +218,8 @@
       spec:
         project: default
         source:
-          repoURL: "https://gitlab.rnl.tecnico.ulisboa.pt/{{ git_repo_org }}/{{ argocd_repo_name }}.git"
-          targetRevision: main
+          repoURL: "git@gitlab.rnl.tecnico.ulisboa.pt:{{ git_repo_org }}/{{ argocd_repo_name }}.git"
+          targetRevision: 4-microservice-structure
           path: "{{ argocd_apps_path | default('argocd-apps') }}"
         destination:
           server: https://kubernetes.default.svc
@@ -188,14 +228,24 @@
           automated:
             prune: true
             selfHeal: true
+          syncOptions:
+            - CreateNamespace=true
 
-- name: Wait for root application to be created
-  kubernetes.core.k8s_info:
-    api_version: argoproj.io/v1alpha1
-    kind: Application
-    name: root
-    namespace: argocd
-  register: root_app
-  retries: 5
-  delay: 5
-  until: root_app.resources | length > 0
+# - name: Wait for root application to be healthy
+#   kubernetes.core.k8s_info:
+#     api_version: argoproj.io/v1alpha1
+#     kind: Application
+#     name: root
+#     namespace: argocd
+#   register: root_app
+#   retries: 12
+#   delay: 10
+#   until: 
+#     - root_app.resources | length > 0
+#     - root_app.resources[0].status is defined
+#     - root_app.resources[0].status.sync is defined
+#     - root_app.resources[0].status.sync.status == "Synced"
+
+- name: Display root application status
+  debug:
+    msg: "Root application status: {{ root_app.resources[0].status.sync.status | default('Unknown') }}"

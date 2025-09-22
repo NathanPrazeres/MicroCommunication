@@ -1,0 +1,32 @@
+---
+kube-prometheus-stack:
+  # Grafana configuration
+  grafana:
+    enabled: true
+    adminPassword: admin
+    service:
+      type: NodePort
+      nodePort: 30000
+    ingress:
+      enabled: false  # Use Traefik ingress separately if needed
+
+  # Prometheus configuration
+  prometheus:
+    enabled: true
+    service:
+      type: NodePort
+      nodePort: 30090
+    prometheusSpec:
+      retention: 7d
+
+  # Alertmanager
+  alertmanager:
+    enabled: true
+
+  # Node exporter for node metrics
+  nodeExporter:
+    enabled: true
+
+  # Kube-state-metrics for k8s resource metrics
+  kubeStateMetrics:
+    enabled: true

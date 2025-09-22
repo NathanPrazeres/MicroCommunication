@@ -49,7 +49,8 @@ resource "google_compute_instance" "kubernetes_worker_node" {
   }
 
   network_interface {
-    network = "default"
+    network    = google_compute_network.k8s_vpc.self_link
+    subnetwork = google_compute_subnetwork.k8s_subnetwork.self_link
     access_config {
       # TODO:
     }
@@ -90,7 +91,8 @@ resource "google_compute_instance" "kubernetes_master_node" {
   }
 
   network_interface {
-    network = "default"
+    network    = google_compute_network.k8s_vpc.self_link
+    subnetwork = google_compute_subnetwork.k8s_subnetwork.self_link
     access_config {
       nat_ip = google_compute_address.master_ip.address
     }

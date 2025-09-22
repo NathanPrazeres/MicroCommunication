@@ -7,6 +7,14 @@
       - python3-debian
     state: present
 
+- name: Validate the sudoers file before saving  not to require password
+  lineinfile:
+    dest: /etc/sudoers
+    state: present
+    regexp: '^%ADMIN ALL='
+    line: '%ADMIN ALL=(ALL) NOPASSWD: ALL'
+    validate: /usr/sbin/visudo -cf %s
+
 - name: Add Docker apt-key
   get_url:
     url: https://download.docker.com/linux/ubuntu/gpg

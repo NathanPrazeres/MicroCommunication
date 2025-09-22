@@ -1,0 +1,41 @@
+---
+architecture: replication # Options: standalone, replication, sentinel
+sentinel:
+  enabled: true
+  quorum: 2
+
+auth:
+  enabled: false  # Enable in production with password
+
+master:
+  persistence:
+    enabled: false
+
+  resources:
+    requests:
+      memory: 128Mi
+      cpu: 100m
+    limits:
+      memory: 256Mi
+      cpu: 200m
+
+  # Redis configuration
+  configuration: |-
+    maxmemory 256mb
+    maxmemory-policy allkeys-lru
+    appendonly yes
+    save ""
+
+replica:
+  replicaCount: 2
+  persistence:
+    enabled: false
+
+metrics:
+  enabled: true
+  serviceMonitor:
+    enabled: true
+    namespace: monitoring
+
+networkPolicy:
+  enabled: false

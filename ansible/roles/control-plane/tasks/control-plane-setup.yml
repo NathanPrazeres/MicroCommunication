@@ -56,7 +56,6 @@
     owner: "debian"
     mode: 0600
 
-
 - name: Copy kubeconfig to root
   copy:
     src: /etc/kubernetes/admin.conf
@@ -107,6 +106,8 @@
   until: weave_result is not failed
   retries: 12
   delay: 5
+
+#####
 
 - name: Wait for all nodes to be ready
   command: kubectl get nodes

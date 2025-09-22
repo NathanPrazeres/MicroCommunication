@@ -25,3 +25,18 @@ yamllint:
   script:
     - yamllint .
   tags: [validation]
+
+validate:
+  steps:
+    # Only validate folders with kustomization.yaml
+    - name: Build app
+      run: kustomize build app/
+    
+    - name: Build keycloak
+      run: kustomize build platform/keycloak/
+    
+    # Don't validate Helm stuff with kustomize
+    # ArgoCD will handle Helm validation
+    
+    - name: Validate ArgoCD Applications
+      run: kubectl apply --dry-run=client -f argocd-apps/

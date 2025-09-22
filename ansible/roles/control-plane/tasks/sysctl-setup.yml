@@ -22,13 +22,22 @@
     - "net.ipv4.ip_forward                 = 1"
     - "net.bridge.bridge-nf-call-ip6tables = 1"
 
+- name: Disable SWAP
+  shell: |
+    swapoff -a
+
+- name: Disable SWAP in fstab
+  replace:
+    path: /etc/fstab
+    regexp: '^([^#].*?\sswap\s+sw\s+.*)$'
+    replace: '# \1'
+
 - name: Enable the containerd service and start service
   systemd:
     name: containerd
     state: restarted
     enabled: yes
     daemon-reload: yes
-
 
 - name: Set bridge-nf-call-iptables
   sysctl:

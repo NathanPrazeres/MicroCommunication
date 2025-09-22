@@ -1,3 +1,7 @@
+charts/
+*.tgz
+Chart.lock
+
 # Taken from Github's .gitignore guide:
 
 **/target/**
@@ -49,4 +53,3 @@ terraform.rc
 # Uncomment the line below if you want to ignore planout files.
 # planout
 .DS_Store
-local-testing/
