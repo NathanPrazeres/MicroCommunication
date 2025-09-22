@@ -50,7 +50,7 @@ Each folder handles its workload and setup up the work for the next layer.
 The workflow is the following:
 
 ```mermaid
-flowchart TD
+flowchart LR
     A[Git Repo] --"on push/merge"--> B{GitlabCI}
     B --> C{Terraform}
     C --> D{Ansible}
