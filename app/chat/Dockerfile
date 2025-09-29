@@ -1,5 +1,5 @@
 # Multi-stage build for Python with Poetry
-FROM python:3.11-slim as builder
+FROM python:3.11-slim AS builder
 
 # Install system dependencies needed for building
 RUN apt-get update && apt-get install -y \
@@ -26,7 +26,7 @@ RUN poetry config virtualenvs.create true \
     && poetry install --only=main --no-root
 
 # Production stage
-FROM python:3.11-slim as runtime
+FROM python:3.11-slim AS runtime
 
 # Create non-root user for security
 RUN groupadd -r appuser && useradd -r -g appuser appuser
@@ -59,4 +59,4 @@ USER appuser
 EXPOSE 5000
 
 # Run the application
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "5000"]
