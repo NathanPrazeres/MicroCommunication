@@ -82,7 +82,7 @@ Its job is very simple, it sets up the base for the kubernetes cluster:
 
 ### Ansible
 
-Ansible's job is to configure the machine. To turn what are simple VMs into Kubernetes Nodes and Pods, into Control Planes and Workers.
+Ansible's job is to configure the machine. To turn what are simple VMs into Kubernetes Nodes, Control Planes and Workers.
 
 Its job involves:
 
@@ -94,11 +94,9 @@ Its job involves:
 
 - installing a [CNI plugin](https://kubernetes.io/docs/concepts/extend-kubernetes/compute-storage-net/network-plugins/) ([Flannel](https://github.com/flannel-io/flannel), [Calico](https://www.tigera.io/project-calico/), [Weaver](https://github.com/weaveworks/weave), etc.)
 
-- installing [helm](https://helm.sh/) so cluster apps can be deployed via charts
-
 ### ArgoCD
 
-Once Helm is installed, ArgoCD can manage the apps.
+ArgoCD will live in its own namespace inside the cluster, managing and installing all the apps.
 
 As GitOps, ArgoCD will watch the git repository for any changes and update them to the cluster.
 
@@ -110,8 +108,6 @@ ArgoCD will:
 
 - configure and deploy our [Ingress](https://kubernetes.io/docs/concepts/services-networking/ingress/) controller
 
-- logging stacks, cert-manager, and all other useful tools
-
 ### Kubernetes
 
 After everything is deployed and configured, Kubernetes will manage the pods, as well as [Horizontal Scaling](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/) for services with high demand, controlling the lifetime of pods and connecting our entire architecture.
@@ -120,9 +116,9 @@ After everything is deployed and configured, Kubernetes will manage the pods, as
 
 The idea here is to have a microservice for each "service", a.k.a functionality of the application that can be self-contained and isolated in a container. They all communicate to the DB through a secure connection.
 
-To separate permissions, our monitoring stack (Grafana, Prometheus, etc.) will be hosted on a different namespace than the application itself.
+To follow the design principles of kubernetes, our monitoring stack (Grafana, Prometheus, etc.) will be hosted on a different namespace than the application itself.
 
-So, we will have:
+So, we will have the following [namespaces](https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/):
 
 - `ingress`
 
@@ -145,6 +141,10 @@ So, we will have:
 - `monitoring`
 
     - [Monitoring Service](#monitoring-service)
+
+- `argocd`
+
+    - [ArgoCD](#argocd)
 
 This allows for different RBAC for different namespaces, as well as networking and separation of concerns.
 
@@ -175,3 +175,5 @@ If time allows it, we will try to have a more production-ready approach to names
 ### DB Service
 
 ### Monitoring Service
+
+### ArgoCD
