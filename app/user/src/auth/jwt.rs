@@ -11,9 +11,12 @@ pub struct JwtValidator {
 
 impl JwtValidator {
     pub fn new(jwks: JwksManager) -> Self {
+        let mut validation = Validation::new(Algorithm::RS256);
+        validation.validate_aud = false;
+
         Self {
             jwks,
-            validation: Validation::new(Algorithm::RS256),
+            validation,
         }
     }
 
@@ -37,10 +40,10 @@ impl JwtValidator {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Claims {
     pub sub: String,
-    pub username: String,
+    pub preferred_username: String,
     pub email: String,
-    pub first_name: String,
-    pub last_name: String,
+    pub given_name: String,
+    pub family_name: String,
     pub exp: usize,
     pub iat: usize,
     pub jti: String,

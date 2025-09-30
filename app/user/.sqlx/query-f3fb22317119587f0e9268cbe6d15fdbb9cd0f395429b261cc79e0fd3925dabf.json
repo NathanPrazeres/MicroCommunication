@@ -1,0 +1,64 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT * FROM user_contacts WHERE user_id = $1 AND is_favorite = true",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "user_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "contact_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "nickname",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "is_favorite",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 4,
+        "name": "is_blocked",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 5,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 6,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 7,
+        "name": "deleted",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "f3fb22317119587f0e9268cbe6d15fdbb9cd0f395429b261cc79e0fd3925dabf"
+}

@@ -1,0 +1,101 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            WITH updated AS (\n                UPDATE user_contacts\n                SET is_blocked = NOT is_blocked,\n                    updated_at = NOW()\n                WHERE user_id = $1 AND contact_id = $2\n                RETURNING *\n            )\n            SELECT\n                u.user_id,\n                u.username,\n                u.email,\n                u.first_name,\n                u.last_name,\n                u.avatar_url,\n                u.phone_number,\n                u.bio,\n                false as \"is_online!\",\n                u.updated_at as last_seen,\n                updated.nickname,\n                updated.is_favorite as \"is_favorite!\",\n                updated.is_blocked as \"is_blocked!\",\n                updated.created_at as contact_since\n            FROM updated\n            INNER JOIN user_profiles u ON u.user_id = updated.contact_id\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "user_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "username",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "email",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "first_name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 4,
+        "name": "last_name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 5,
+        "name": "avatar_url",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 6,
+        "name": "phone_number",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 7,
+        "name": "bio",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 8,
+        "name": "is_online!",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 9,
+        "name": "last_seen",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 10,
+        "name": "nickname",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 11,
+        "name": "is_favorite!",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 12,
+        "name": "is_blocked!",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 13,
+        "name": "contact_since",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      null,
+      false,
+      true,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "4c5a1d4948be378fc8a33afda63d600f148682c7af6703b8062580c3c75c6c48"
+}

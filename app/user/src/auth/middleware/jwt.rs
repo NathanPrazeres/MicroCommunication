@@ -24,7 +24,7 @@ pub async fn jwt_middleware(
 
     let claims = validator.verify(token).await.map_err(anyhow::Error::from)?;
 
-    tracing::debug!("Authenticated user: {:?} ({})", claims.username, claims.sub);
+    tracing::debug!("Authenticated user: {:?} ({})", claims.preferred_username, claims.sub);
 
     // 4. Store claims in request extensions for handlers to use
     request.extensions_mut().insert(claims);

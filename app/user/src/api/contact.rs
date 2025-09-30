@@ -1,4 +1,4 @@
-use tracing::{info, instrument};
+use tracing::info;
 use uuid::Uuid;
 
 use axum::{
@@ -27,11 +27,9 @@ pub fn routes() -> Router<AppState> {
         .route("/{id}/favorite", post(toggle_favorite))
         //
         .route("/blocked", get(get_blocked))
-        .route("/{id}/block", post(block_user))
-        .route("/{id}/unblock", post(unblock_user))
+        .route("/{id}/block", post(toggle_blocked))
 }
 
-#[instrument]
 async fn get_contacts(
     State(state): State<ApiState>,
     Extension(claims): Extension<Claims>,
@@ -41,16 +39,15 @@ async fn get_contacts(
     let user_id = Uuid::parse_str(claims.sub.as_ref()).expect("valid user_id");
 
     info!(
-        "Calling `ContactService::get_contacts` for [{}]'s contacts",
+        "Calling `ContactService::get_contacts_with_profiles` for [{}]'s contacts",
         user_id
     );
-    let contacts = state.contact_service.get_contacts(user_id).await.unwrap();
+    let contacts = state.contact_service.get_contacts_with_profiles(user_id).await.unwrap();
     info!("Fetched {} contacts for [{}]", contacts.len(), user_id);
 
     (StatusCode::OK, Json(contacts))
 }
 
-#[instrument]
 async fn add_contact(
     Extension(claims): Extension<Claims>,
     State(state): State<ApiState>,
@@ -61,6 +58,8 @@ async fn add_contact(
 
     let user_id = Uuid::parse_str(claims.sub.as_ref()).expect("valid user_id");
 
+    let username = claims.preferred_username.clone();
+
     info!(
         "Calling `ContactService::create_contact` for [{}] with params {:#?}",
         user_id, request
@@ -68,7 +67,7 @@ async fn add_contact(
 
     let user = state
         .contact_service
-        .create_contact(user_id, request)
+        .create_contact(user_id, username, request)
         .await
         .unwrap();
 
@@ -77,13 +76,12 @@ async fn add_contact(
     (StatusCode::CREATED, Json(user))
 }
 
-#[instrument]
 async fn delete_contact(
     Extension(claims): Extension<Claims>,
     State(state): State<ApiState>,
     Path(id): Path<Uuid>,
 ) -> impl IntoResponse {
-    info!("Received `add_contact` call");
+    info!("Received `delete_contact` call");
     info!("Parsing sub claim [{}] into string", claims.sub.clone());
 
     let user_id = Uuid::parse_str(claims.sub.as_ref()).expect("valid user_id");
@@ -97,14 +95,13 @@ async fn delete_contact(
     (StatusCode::NO_CONTENT, Json(()))
 }
 
-#[instrument]
 async fn update_contact(
     State(state): State<ApiState>,
     Path(id): Path<Uuid>,
     Extension(claims): Extension<Claims>,
     Json(request): Json<UpdateContactRequest>,
 ) -> impl IntoResponse {
-    info!("Received `add_contact` call");
+    info!("Received `update_contact` call");
     info!("Parsing sub claim [{}] into string", claims.sub.clone());
 
     let user_id = Uuid::parse_str(claims.sub.as_ref()).expect("valid user_id");
@@ -122,12 +119,11 @@ async fn update_contact(
     (StatusCode::OK, Json(user))
 }
 
-#[instrument]
 async fn get_favorites(
     Extension(claims): Extension<Claims>,
     State(state): State<ApiState>,
 ) -> impl IntoResponse {
-    info!("Received `add_contact` call");
+    info!("Received `get_favorite` call");
     info!("Parsing sub claim [{}] into string", claims.sub.clone());
 
     let user_id = Uuid::parse_str(claims.sub.as_ref()).expect("valid user_id");
@@ -138,13 +134,12 @@ async fn get_favorites(
     (StatusCode::OK, Json(favorites))
 }
 
-#[instrument]
 async fn toggle_favorite(
     Extension(claims): Extension<Claims>,
     State(state): State<ApiState>,
     Path(id): Path<Uuid>,
 ) -> impl IntoResponse {
-    info!("Received `add_contact` call");
+    info!("Received `toggle_favorite` call");
     info!("Parsing sub claim [{}] into string", claims.sub.clone());
 
     let user_id = Uuid::parse_str(claims.sub.as_ref()).expect("valid user_id");
@@ -162,12 +157,11 @@ async fn toggle_favorite(
     (StatusCode::OK, Json(contact))
 }
 
-#[instrument]
 async fn get_blocked(
     State(state): State<ApiState>,
     Extension(claims): Extension<Claims>,
 ) -> impl IntoResponse {
-    info!("Received `add_contact` call");
+    info!("Received `get_blocked` call");
     info!("Parsing sub claim [{}] into string", claims.sub.clone());
 
     let user_id = Uuid::parse_str(claims.sub.as_ref()).expect("valid user_id");
@@ -179,50 +173,24 @@ async fn get_blocked(
     (StatusCode::OK, Json(blocked))
 }
 
-#[instrument]
-async fn block_user(
+async fn toggle_blocked(
     Extension(claims): Extension<Claims>,
     State(state): State<ApiState>,
     Path(id): Path<Uuid>,
 ) -> impl IntoResponse {
-    info!("Received `add_contact` call");
+    info!("Received `toggle_blocked` call");
     info!("Parsing sub claim [{}] into string", claims.sub.clone());
 
     let user_id = Uuid::parse_str(claims.sub.as_ref()).expect("valid user_id");
 
     info!(
-        "Calling `ContactService::block_contact` for [{}] with params {}",
+        "Calling `ContactService::toggle_blocked` for [{}] with params {}",
         user_id, id
     );
 
     state
         .contact_service
-        .block_contact(&user_id, &id)
-        .await
-        .unwrap();
-
-    (StatusCode::NO_CONTENT, Json(()))
-}
-
-#[instrument]
-async fn unblock_user(
-    Extension(claims): Extension<Claims>,
-    State(state): State<ApiState>,
-    Path(id): Path<Uuid>,
-) -> impl IntoResponse {
-    info!("Received `add_contact` call");
-    info!("Parsing sub claim [{}] into string", claims.sub.clone());
-
-    let user_id = Uuid::parse_str(claims.sub.as_ref()).expect("valid user_id");
-
-    info!(
-        "Calling `ContactService::unblock_contact` for [{}] with params {}",
-        user_id, id
-    );
-
-    state
-        .contact_service
-        .unblock_contact(&user_id, &id)
+        .toggle_blocked(&user_id, &id)
         .await
         .unwrap();
 

@@ -15,7 +15,7 @@ services:
     networks:
       - dev-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U app"]
+      test: ["CMD-SHELL", "pg_isready -U keycloak"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -79,7 +79,7 @@ services:
 
       # Keycloak
       KEYCLOAK_URL: http://keycloak:8080
-      KEYCLOAK_REALM: dev
+      KEYCLOAK_REALM: app
 
       # Service config
       SERVICE_PORT: 3000

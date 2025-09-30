@@ -1,118 +1,172 @@
 ---
-version: "3.9"
-
 services:
-  front-end:
-    image:
-    container_name: front-end
-    restart: unless-stopped
-    ports:
-      - "8080:80"  # this is just an example
-    networks:
-      - front-end
-      - back-end
-    depends_on:
-      - user
-      - auth
-      - message
-      - delivery
 
-  user:
-    image:
+  # UI Service - React microservice
+  ui-service:
+    build:
+      context: ./ui
+    container_name: ui-service
+    ports:
+      - 4173:4173
+    depends_on:
+      keycloak:
+        condition: service_started
+    networks:
+      - dev-network
+    restart: unless-stopped
+
+  # Chat Service - Python/FastAPI microservice
+  chat-service:
+    build:
+      context: ./chat
+    container_name: chat-service
+    environment:
+      PG_HOST: postgres
+      PG_PORT: 5432
+      PG_NAME: chat_service
+      PG_USER: admin
+      PG_PASS: admin
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      USER_HOST: user-service
+      USER_PORT: 3000
+      FRONTEND_HOST: frontend-service
+      FRONTEND_PORT: 4173
+      AUTH_HOST: keycloak
+      AUTH_PORT: 8080
+      AUTH_REALM: app
+    ports:
+      - 5000:5000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      keycloak:
+        condition: service_started
+    networks:
+      - dev-network
+    restart: unless-stopped
+
+  # User Service - Rust/Axum microservice
+  user-service:
+    build:
+      context: ./user
     container_name: user-service
-    restart: unless-stopped
-    ports:
-      - "5001:5000"  # just an example as well
-    networks:
-      - back-end
-    depends_on:
-      - db
-      - redis
+    environment:
+      # Database
+      DATABASE_URL: postgres://admin:admin@postgres:5432/user_service
 
-  auth:
-    image:
-    container_name: auth-service
-    restart: unless-stopped
-    ports:
-      - "5002:5000"
-    networks:
-      - back-end
-    depends_on:
-      - db
-      - redis
+      # Redis
+      REDIS_URL: redis://redis:6379
+      REDIS_TTL_SECONDS: 3600
+      REDIS_CACHE_ENABLED: true
 
-  message:
-    image:
-    container_name: message-service
-    restart: unless-stopped
-    ports:
-      - "5003:5000"
-    networks:
-      - back-end
-    depends_on:
-      - db
-      - redis
+      # Keycloak
+      KEYCLOAK_URL: http://keycloak:8080
+      KEYCLOAK_REALM: app
 
-  delivery:
-    image:
-    container_name: delivery-service
-    restart: unless-stopped
-    ports:
-      - "5004:5000"
-    networks:
-      - back-end
-    depends_on:
-      - db
-      - redis
+      # Service config
+      SERVICE_PORT: 3000
 
+      RUST_LOG: info
+      RUST_BACKTRACE: 1
+    ports:
+      - 3000:3000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      keycloak:
+        condition: service_started
+    networks:
+      - dev-network
+    restart: unless-stopped
+
+  # PostgreSQL - Shared database for Keycloak and User Service
+  postgres:
+    image: postgres:15-alpine
+    container_name: postgres
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    ports:
+      - 5432:5432
+    networks:
+      - dev-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Keycloak - Authentication & Authorization Service
+  keycloak:
+    image: quay.io/keycloak/keycloak:25.0
+    container_name: keycloak-dev
+    command: start-dev --import-realm
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
+      KC_DB_USERNAME: admin
+      KC_DB_PASSWORD: admin
+      KC_HEALTH_ENABLED: true
+      KC_METRICS_ENABLED: true
+      KC_HTTP_MANAGEMENT_PORT: 9000
+    ports:
+      - 8080:8080
+      - 9000:9000
+    networks:
+      - dev-network
+    volumes:
+      - ./app-realm.json:/opt/keycloak/data/import/app-realm.json:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # Redis - Caching Layer
   redis:
     image: redis:7-alpine
-    container_name: redis-service
-    restart: unless-stopped
+    container_name: dev-redis
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru --appendonly yes
     ports:
-      - "6379:6379"
-    networks:
-      - back-end
-
-  db:
-    image: postgres:15-alpine
-    container_name: db-service
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: appdb
-    ports:
-      - "5432:5432"
-    networks:
-      - back-end
-
-  prometheus:
-    image: prom/prometheus:latest
-    container_name: prometheus
-    restart: unless-stopped
-    ports:
-      - "9090:9090"
+      - 6379:6379
     volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - redis_data:/data
     networks:
-      - monitoring
+      - dev-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  grafana:
-    image: grafana/grafana:latest
-    container_name: grafana
-    ports:
-      - "3000:3000"
-    networks:
-      - monitoring
-    # NOTE: let's not hardcode this
+  # Redis Commander - Optional GUI for Redis debugging
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: redis-commander
     environment:
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=admin
+      REDIS_HOSTS: local:redis:6379
+    ports:
+      - 8081:8081
     depends_on:
-      - prometheus
+      - redis
+    networks:
+      - dev-network
+    profiles:
+      - debug
+
+volumes:
+  postgres_data:
+  redis_data:
 
 networks:
-  monitoring: {}
-  front-end: {}
-  back-end: {}
+  dev-network:
+    driver: bridge

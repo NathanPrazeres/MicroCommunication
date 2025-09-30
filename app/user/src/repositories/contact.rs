@@ -1,6 +1,6 @@
 use crate::{
     error::AppError,
-    models::{AddContactRequest, UpdateContactRequest, UserContact, UserResponse},
+    models::{UpdateContactRequest, UserContact, UserResponse},
 };
 
 use anyhow::{Ok, Result};
@@ -18,51 +18,60 @@ impl ContactRepository {
         Self { db_pool }
     }
 
-    pub async fn create_contact(
-        &self,
-        user_id: Uuid,
-        request: AddContactRequest,
-    ) -> Result<UserContact> {
+    pub async fn create_contact(&self, user_id: Uuid, username: String) -> Result<UserContact> {
         tracing::info!(
-            "Creating contact for user {} with contact {:?}",
+            "Creating contact for user {} with username '{}'",
             user_id,
-            request
+            username
         );
 
+        let contact_user = sqlx::query!(
+            r#"
+            SELECT user_id
+            FROM user_profiles
+            WHERE username = $1
+            "#,
+            username
+        )
+        .fetch_optional(&self.db_pool)
+        .await
+        .map_err(|e| {
+            tracing::error!("Failed to query user by username '{}': {}", username, e);
+            AppError::DatabaseError(e)
+        })?
+        .ok_or_else(|| AppError::NotFound(format!("User '{}' not found", username)))?;
+
+        // Step 2: Insert the contact relationship
         let contact = sqlx::query_as!(
             UserContact,
             r#"
-        INSERT INTO user_contacts (
-            user_id, contact_id, nickname,
-            is_favorite, is_blocked, created_at, updated_at
-        )
-        VALUES ($1, $2, $3, false, false, NOW(), NOW())
-        RETURNING *
-        "#,
+            INSERT INTO user_contacts (
+                user_id, contact_id, nickname,
+                is_favorite, is_blocked, created_at, updated_at
+            )
+            VALUES ($1, $2, $3, false, false, NOW(), NOW())
+            RETURNING *
+            "#,
             user_id,
-            request.contact_id,
-            request.nickname
+            contact_user.user_id,
+            username
         )
         .fetch_one(&self.db_pool)
         .await
         .map_err(|e| {
             tracing::error!(
-                "Failed to insert contact '{}' (keycloak_id: {}): {}",
-                request.contact_id,
+                "Failed to insert contact '{}' for user {}: {}",
+                username,
                 user_id,
                 e
             );
 
-            // Better error messages based on error type
             match e {
                 sqlx::Error::Database(db_err) => {
                     if db_err.is_unique_violation() {
-                        AppError::Conflict(format!(
-                            "Contact '{}' already exists",
-                            request.contact_id
-                        ))
+                        AppError::Conflict(format!("Contact '{}' already exists", username))
                     } else if db_err.is_foreign_key_violation() {
-                        AppError::BadRequest("Invalid Keycloak user ID".to_string())
+                        AppError::BadRequest("Invalid contact reference".to_string())
                     } else {
                         AppError::DatabaseError(sqlx::Error::Database(db_err))
                     }
@@ -107,7 +116,7 @@ impl ContactRepository {
         Ok(contacts)
     }
 
-    pub async fn get_contacts_with_profiles(&self, user_id: &Uuid) -> Result<Vec<UserResponse>> {
+    pub async fn get_contacts_with_profiles(&self, user_id: Uuid) -> Result<Vec<UserResponse>> {
         let contacts = sqlx::query_as!(
             UserResponse,
             r#"
@@ -240,31 +249,48 @@ impl ContactRepository {
         Ok(contacts)
     }
 
-    pub async fn set_blocked(
+    pub async fn toggle_blocked(
         &self,
         user_id: &Uuid,
         contact_user_id: &Uuid,
-        blocked: bool,
-    ) -> Result<()> {
-        let result = sqlx::query!(
+    ) -> Result<UserResponse> {
+        // Toggle the blocked status
+        let contact = sqlx::query_as!(
+            UserResponse,
             r#"
-            UPDATE user_contacts
-            SET is_blocked = $3,
-                updated_at = NOW()
-            WHERE user_id = $1 AND contact_id = $2
+            WITH updated AS (
+                UPDATE user_contacts
+                SET is_blocked = NOT is_blocked,
+                    updated_at = NOW()
+                WHERE user_id = $1 AND contact_id = $2
+                RETURNING *
+            )
+            SELECT
+                u.user_id,
+                u.username,
+                u.email,
+                u.first_name,
+                u.last_name,
+                u.avatar_url,
+                u.phone_number,
+                u.bio,
+                false as "is_online!",
+                u.updated_at as last_seen,
+                updated.nickname,
+                updated.is_favorite as "is_favorite!",
+                updated.is_blocked as "is_blocked!",
+                updated.created_at as contact_since
+            FROM updated
+            INNER JOIN user_profiles u ON u.user_id = updated.contact_id
             "#,
             user_id,
-            contact_user_id,
-            blocked
+            contact_user_id
         )
-        .execute(&self.db_pool)
-        .await?;
+        .fetch_optional(&self.db_pool)
+        .await?
+        .ok_or_else(|| AppError::NotFound("Contact not found".to_string()))?;
 
-        if result.rows_affected() == 0 {
-            return Err(AppError::NotFound("Contact not found".to_string()).into());
-        }
-
-        Ok(())
+        Ok(contact)
     }
 
     pub async fn contact_exists_for_user(

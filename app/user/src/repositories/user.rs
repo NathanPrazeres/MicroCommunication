@@ -111,8 +111,6 @@ impl UserRepository {
             .await
             .map_err(|_| AppError::NotFound("User with the given ID not found".to_string()))?;
 
-        self.cache.set_user(id, &user).await?;
-
         Ok(user)
     }
 
@@ -128,8 +126,6 @@ impl UserRepository {
         .fetch_one(&self.db_pool)
         .await
         .map_err(|_| AppError::NotFound("User with the given ID not found".to_string()))?;
-
-        self.cache.set_user(id, &user).await?;
 
         Ok(user)
     }

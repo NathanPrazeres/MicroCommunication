@@ -25,10 +25,15 @@ class UserDto(BaseModel):
     name: str
     email: str
 
+class RoomParticipantDto(BaseModel):
+    user_id: UUID
+    role: Literal["owner", "admin", "member"]
+
 class RoomDto(BaseModel):
     id: UUID
     name: Optional[str]
     description: Optional[str]
+    participants: list[RoomParticipantDto]
     room_type: Literal["direct", "group", "channel"]
     created_by: UUID
     created_at: datetime

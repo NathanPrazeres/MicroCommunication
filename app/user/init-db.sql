@@ -90,7 +90,7 @@ CREATE OR REPLACE FUNCTION create_user_preferences()
 RETURNS TRIGGER AS $$
 BEGIN
     INSERT INTO user_preferences (user_id)
-    VALUES (NEW.id);
+    VALUES (NEW.user_id);
     RETURN NEW;
 END;
 $$ language 'plpgsql';
@@ -98,12 +98,3 @@ $$ language 'plpgsql';
 CREATE TRIGGER auto_create_user_preferences AFTER INSERT ON user_profiles
     FOR EACH ROW EXECUTE FUNCTION create_user_preferences();
 
-
-CREATE ROLE app WITH LOGIN PASSWORD 'keycloak_password';
-
-GRANT ALL PRIVILEGES ON DATABASE keycloak TO keycloak;
-GRANT ALL PRIVILEGES ON DATABASE keycloak TO app;
-GRANT ALL ON SCHEMA public TO keycloak;
-GRANT ALL ON SCHEMA public TO app;
-
-ALTER DATABASE keycloak OWNER TO keycloak;

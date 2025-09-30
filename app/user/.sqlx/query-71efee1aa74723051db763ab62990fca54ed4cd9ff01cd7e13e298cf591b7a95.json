@@ -1,0 +1,68 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        UPDATE user_contacts\n        SET\n            nickname = COALESCE($3, nickname),\n            is_favorite = COALESCE($4, is_favorite),\n            is_blocked = COALESCE($5, is_blocked),\n            updated_at = NOW()\n        WHERE user_id = $1 AND contact_id = $2\n        RETURNING *\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "user_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "contact_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "nickname",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "is_favorite",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 4,
+        "name": "is_blocked",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 5,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 6,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 7,
+        "name": "deleted",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Varchar",
+        "Bool",
+        "Bool"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "71efee1aa74723051db763ab62990fca54ed4cd9ff01cd7e13e298cf591b7a95"
+}

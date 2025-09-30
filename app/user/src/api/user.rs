@@ -33,7 +33,7 @@ async fn create_user(
     State(state): State<ApiState>,
     Json(request): Json<CreateUserRequest>,
 ) -> impl IntoResponse {
-    info!("Received `add_contact` call");
+    info!("Received `create_user` call");
     info!("Parsing sub claim [{}] into string", claims.sub.clone());
 
     let user_id = Uuid::parse_str(claims.sub.as_ref()).expect("valid user_id");
@@ -42,28 +42,28 @@ async fn create_user(
     let email = claims.email.clone();
 
     info!(
-        "Parsing username claim [{}] into string",
-        claims.username.clone()
+        "Parsing preferred_username claim [{}] into string",
+        claims.preferred_username.clone()
     );
-    let username = claims.username.clone();
+    let preferred_username = claims.preferred_username.clone();
 
     info!(
-        "Parsing first_name claim [{}] into string",
-        claims.first_name.clone()
+        "Parsing given_name claim [{}] into string",
+        claims.given_name.clone()
     );
-    let first_name = claims.first_name.clone();
+    let given_name = claims.given_name.clone();
 
-    info!("Parsing last claim [{}] into string", claims.sub.clone());
-    let last_name = claims.last_name.clone();
+    info!("Parsing family_name claim [{}] into string", claims.family_name.clone());
+    let family_name = claims.family_name.clone();
 
     info!(
         "Calling `UserService::create_user` for [{}] with params {} {} {} {}",
-        user_id, email, first_name, last_name, username
+        user_id, email, given_name, family_name, preferred_username
     );
 
     let user = state
         .user_service
-        .create_user(user_id, &email, &first_name, &last_name, &username, request)
+        .create_user(user_id, &email, &preferred_username, &given_name, &family_name, request)
         .await
         .unwrap();
 
@@ -75,7 +75,7 @@ async fn get_user(
     State(state): State<ApiState>,
     Path(id): Path<Uuid>,
 ) -> impl IntoResponse {
-    info!("Received `add_contact` call");
+    info!("Received `get_user` call");
     info!("Parsing sub claim [{}] into string", claims.sub.clone());
 
     let user_id = Uuid::parse_str(claims.sub.as_ref()).expect("valid user_id");
@@ -99,21 +99,32 @@ async fn get_user_self(
     State(state): State<ApiState>,
     Extension(claims): Extension<Claims>,
 ) -> impl IntoResponse {
+    info!("Parsing sub claim [{}] into string", claims.sub.clone());
     let user_id = Uuid::parse_str(claims.sub.as_ref()).expect("valid user_id");
+
     let user = state.user_service.get_user(user_id).await.unwrap();
     (StatusCode::OK, Json(user))
 }
 
 async fn update_user(
     State(state): State<ApiState>,
-    Path(id): Path<Uuid>,
+    Extension(claims): Extension<Claims>,
     Json(request): Json<UpdateUserRequest>,
 ) -> impl IntoResponse {
-    let user = state.user_service.update_user(id, request).await.unwrap();
+    info!("Parsing sub claim [{}] into string", claims.sub.clone());
+    let user_id = Uuid::parse_str(claims.sub.as_ref()).expect("valid user_id");
+
+    let user = state.user_service.update_user(user_id, request).await.unwrap();
     (StatusCode::OK, Json(user))
 }
 
-async fn delete_user(State(state): State<ApiState>, Path(id): Path<Uuid>) -> impl IntoResponse {
-    let _ = state.user_service.delete_user(id).await;
+async fn delete_user(
+    State(state): State<ApiState>,
+    Extension(claims): Extension<Claims>,
+) -> impl IntoResponse {
+    info!("Parsing sub claim [{}] into string", claims.sub.clone());
+    let user_id = Uuid::parse_str(claims.sub.as_ref()).expect("valid user_id");
+
+    let _ = state.user_service.delete_user(user_id).await;
     (StatusCode::NO_CONTENT, Json(()))
 }

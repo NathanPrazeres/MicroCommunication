@@ -18,8 +18,7 @@ pub struct UserContact {
 
 #[derive(Debug, Deserialize)]
 pub struct AddContactRequest {
-    pub contact_id: Uuid,
-    pub nickname: Option<String>,
+    pub username: String,
 }
 
 #[derive(Debug, Deserialize)]

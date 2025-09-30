@@ -12,6 +12,8 @@ use anyhow::{Ok, Result};
 use axum::{Router, routing::get};
 use bb8_redis::RedisConnectionManager;
 use prometheus::{IntCounterVec, Registry, opts};
+use reqwest_middleware::ClientBuilder;
+use reqwest_retry::{RetryTransientMiddleware, policies::ExponentialBackoff};
 use std::net::SocketAddr;
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
 use tracing::info;
@@ -37,6 +39,7 @@ async fn main() {
     info!("Starting User Service...");
 
     info!("Configuration loaded successfully");
+    info!(".env dump: {:#?}", config);
 
     // Initialize database connection pool
     let db_pool = init_database(&config.database_url)
@@ -143,9 +146,13 @@ pub async fn init_jwk_manager(config: Config) -> Result<JwksManager> {
         &config.keycloak_url, &config.keycloak_realm
     );
 
-    let http_client = reqwest::blocking::Client::builder().build()?;
+    let retry_policy = ExponentialBackoff::builder().build_with_max_retries(10);
+    let client = ClientBuilder::new(reqwest::Client::new())
+        .with(RetryTransientMiddleware::new_with_policy(retry_policy))
+        .build();
 
-    let response_json: serde_json::Value = http_client.get(openid_url).send()?.json().unwrap();
+    let response = client.get(&openid_url).send().await?;
+    let response_json: serde_json::Value = response.json().await?;
 
     let jwks_url = response_json.get("jwks_uri").unwrap().as_str().unwrap();
 

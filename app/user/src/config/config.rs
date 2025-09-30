@@ -1,6 +1,8 @@
 use std::env;
 use std::num::ParseIntError;
 
+use tracing::info;
+
 use serde::Deserialize;
 
 #[derive(Debug, Clone, Deserialize)]
@@ -36,6 +38,7 @@ pub enum Environment {
 
 impl Config {
     pub fn from_env() -> Result<Self, ConfigError> {
+        info!("Trying to parse Environment Variables");
         Ok(Self {
             database_url: env::var("DATABASE_URL")?,
             redis_url: env::var("REDIS_URL")?,

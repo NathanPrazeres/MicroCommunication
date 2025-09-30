@@ -1,0 +1,100 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT\n                u.user_id,\n                u.username,\n                u.first_name,\n                u.last_name,\n                u.avatar_url,\n                u.bio,\n                u.email,\n                u.phone_number,\n                u.is_online,\n                u.last_seen,\n                uc.nickname,\n                uc.is_favorite,\n                uc.is_blocked,\n                uc.created_at as contact_since\n            FROM user_contacts uc\n            INNER JOIN user_profiles u ON u.user_id = uc.contact_id\n            WHERE uc.user_id = $1\n            AND uc.is_blocked = false\n            ORDER BY uc.is_favorite DESC, uc.created_at DESC\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "user_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "username",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "first_name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "last_name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 4,
+        "name": "avatar_url",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 5,
+        "name": "bio",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "email",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 7,
+        "name": "phone_number",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 8,
+        "name": "is_online",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 9,
+        "name": "last_seen",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 10,
+        "name": "nickname",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 11,
+        "name": "is_favorite",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 12,
+        "name": "is_blocked",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 13,
+        "name": "contact_since",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      true,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "315177ec5b3cfea8f4122fe1d159355b15d04b23f279efc3df61fc5676291858"
+}

@@ -19,14 +19,18 @@ impl ContactService {
     pub async fn create_contact(
         &self,
         user_id: Uuid,
+        username: String,
         request: AddContactRequest,
     ) -> Result<UserContact> {
-        if user_id == request.contact_id {
+        if username == request.username {
             return Err(AppError::BadRequest(
                 "Cannot add yourself as a contact".to_string(),
             ));
         }
-        let contact = self.repository.create_contact(user_id, request).await?;
+        let contact = self
+            .repository
+            .create_contact(user_id, request.username)
+            .await?;
 
         tracing::info!(
             "Created contact {} for user {}",
@@ -44,7 +48,7 @@ impl ContactService {
         Ok(contacts)
     }
 
-    pub async fn get_contacts_with_profiles(&self, user_id: &Uuid) -> Result<Vec<UserResponse>> {
+    pub async fn get_contacts_with_profiles(&self, user_id: Uuid) -> Result<Vec<UserResponse>> {
         let contacts = self.repository.get_contacts_with_profiles(user_id).await?;
 
         Ok(contacts)
@@ -101,19 +105,10 @@ impl ContactService {
         Ok(blocked)
     }
 
-    pub async fn block_contact(&self, user_id: &Uuid, contact_user_id: &Uuid) -> Result<()> {
+    pub async fn toggle_blocked(&self, user_id: &Uuid, contact_user_id: &Uuid) -> Result<()> {
         let _ = self
             .repository
-            .set_blocked(user_id, contact_user_id, true)
-            .await;
-
-        Ok(())
-    }
-
-    pub async fn unblock_contact(&self, user_id: &Uuid, contact_user_id: &Uuid) -> Result<()> {
-        let _ = self
-            .repository
-            .set_blocked(user_id, contact_user_id, false)
+            .toggle_blocked(user_id, contact_user_id)
             .await;
 
         Ok(())
