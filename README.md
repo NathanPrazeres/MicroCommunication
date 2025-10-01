@@ -14,7 +14,6 @@ The CI includes the [pre-commit-terraform](https://github.com/antonbabenko/pre-c
 
 ### Pre-requisites
 
-
 ## File Structure
 
 The idea was to have a structure that would encapsulate each step in setting up the environment, so that's exactly what we did, with the names being as explicit as possible:
@@ -28,11 +27,14 @@ The idea was to have a structure that would encapsulate each step in setting up 
 - `monitoring`: all monitoring software used to ensure uptime and logging.
 
 ```txt
-── application
-│   ├── back-end
+├── app
+│   ├── kubernetes
+│   ├── ui
+│   ├── redis
 │   ├── database
-│   ├── front-end
-│   └── kubernetes
+│   ├── user
+│   ├── chat
+│   └── auth
 ├── configuration
 │   └── ansible
 │       ├── inventory.ini
@@ -159,6 +161,88 @@ If time allows it, we will try to have a more production-ready approach to names
 - `app-frontend`: the [ui](#ui-service) will live alone in this namespace
 
 - `app-data`: the [redis](#redis-service) and [db](#db-service) components will be hosted in this namespace
+
+## Database Architecture
+
+```mermaid
+erDiagram
+    USERS {
+        UUID id PK
+        VARCHAR username
+        VARCHAR email
+        VARCHAR password_hash
+        BOOLEAN is_verified
+        BOOLEAN is_active
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+    }
+
+    USER_PROFILES {
+        UUID user_id PK
+        VARCHAR display_name
+        TEXT bio
+        VARCHAR avatar_url
+        VARCHAR status
+        VARCHAR phone_number
+        TIMESTAMP last_seen
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+    }
+
+    CONTACTS {
+        UUID user_id PK
+        UUID contact_id PK
+        VARCHAR nickname
+        TIMESTAMP added_at
+    }
+
+    ROOMS {
+        UUID id PK
+        VARCHAR name
+        VARCHAR description
+        VARCHAR room_type
+        UUID created_by FK
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+    }
+
+    ROOM_PARTICIPANTS {
+        UUID room_id FK
+        UUID user_id FK
+        VARCHAR role
+        TIMESTAMP joined_at
+        TIMESTAMP last_read_at
+    }
+
+    MESSAGES {
+        UUID id PK
+        UUID room_id FK
+        UUID sender_id FK
+        TEXT content
+        VARCHAR message_type
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+        TIMESTAMP deleted_at
+    }
+
+    MESSAGE_READS {
+        UUID message_id FK
+        UUID user_id FK
+        TIMESTAMP read_at
+    }
+
+    %% Relationships
+    USERS ||--o{ USER_PROFILES : has
+    USERS ||--o{ CONTACTS : "can add"
+    USERS ||--o{ ROOMS : "creates"
+    USERS ||--o{ ROOM_PARTICIPANTS : "joins"
+    USERS ||--o{ MESSAGES : "sends"
+
+    ROOMS ||--o{ ROOM_PARTICIPANTS : "has"
+    ROOMS ||--o{ MESSAGES : "contains"
+
+    MESSAGES ||--o{ MESSAGE_READS : "read by"
+```
 
 ### Ingress Controller
 
