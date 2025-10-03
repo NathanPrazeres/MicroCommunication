@@ -14,7 +14,7 @@ router = APIRouter(prefix="/api/v1", tags=["api", "chat"])
 
 ### App ###
 
-@app.websocket("/ws/{client_id}")
+@router.websocket("/ws/{client_id}")
 async def websocket_endpoint(websocket: WebSocket, client_id: int):
     await manager.connect(client_id, websocket)
     try:
@@ -25,15 +25,15 @@ async def websocket_endpoint(websocket: WebSocket, client_id: int):
     except WebSocketDisconnect:
         manager.disconnect(client_id)
 
-@app.get("/rooms")
+@router.get("/rooms")
 def get_rooms():
     pass
 
-@app.post("/rooms")
+@router.post("/rooms")
 def create_room():
     pass
 
-@app.get("rooms/{room_id}/users")
+@router.get("rooms/{room_id}/users")
 def get_room_users(room_id: int):
     pass
 
