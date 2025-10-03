@@ -1,46 +1,29 @@
 from fastapi import (
     FastAPI,
+    APIRouter,
     Response,
     status,
     WebSocket,
     WebSocketDisconnect
 )
+from datetime import datetime, timezone
+from utils.websocket_manager import manager
 
 app = FastAPI()
-
-class ConnectionManager:
-    def __init__(self):
-        self.active_connections: list[WebSocket] = []
-
-    async def connect(self, websocket: WebSocket):
-        await websocket.accept()
-        self.active_connections.append(websocket)
-
-    def disconnect(self, websocket: WebSocket):
-        self.active_connections.remove(websocket)
-
-    async def send_personal_message(self, message: str, websocket: WebSocket):
-        await websocket.send_text(message)
-
-    async def broadcast(self, message: str):
-        for connection in self.active_connections:
-            await connection.send_text(message)
-
-manager = ConnectionManager()
+router = APIRouter(prefix="/api/v1", tags=["api", "chat"])
 
 ### App ###
 
 @app.websocket("/ws/{client_id}")
 async def websocket_endpoint(websocket: WebSocket, client_id: int):
-    await manager.connect(websocket)
+    await manager.connect(client_id, websocket)
     try:
         while True:
             data = await websocket.receive_text()
-            await manager.send_personal_message(f"You wrote: {data}", websocket)
-            await manager.broadcast(f"Client #{client_id} says: {data}")
+            await manager.send(client_id, f"You wrote: {data}")
+            # TODO: change this, it's just a placeholder
     except WebSocketDisconnect:
-        manager.disconnect(websocket)
-        await manager.broadcast(f"Client #{client_id} left the chat")
+        manager.disconnect(client_id)
 
 @app.get("/rooms")
 def get_rooms():
@@ -57,7 +40,24 @@ def get_room_users(room_id: int):
 
 ### Kubernetes ###
 
-@app.get("/healthz")
+@router.get("/healthz")
 def get_liveness(response: Response):
     response.status_code = status.HTTP_200_OK
-    return "ok"
+    return {
+        "status": "healthy",
+        "service": "chat-service",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+@router.get("/readyz")
+def get_readiness(response: Response):
+    response.status_code = status.HTTP_200_OK
+    return {
+        "status": "ready",
+        "service": "chat-service",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+app.include_router(router)
