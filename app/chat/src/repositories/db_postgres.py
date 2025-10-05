@@ -1,19 +1,14 @@
 from uuid import UUID
 from psycopg_pool import AsyncConnectionPool
-from os import environ as env
 from typing import Optional
-
-# TODO: make sure this is consitent with other parts of the project
-PG_NAME = env.get("PG_NAME")
-PG_USER = env.get("PG_USER")
-PG_PASS = env.get("PG_PASS")
+import config
 
 
 class PostgresClient:
     def __init__(self):
         # TODO: make sure the conninfo and host is correct
         self.pool = AsyncConnectionPool(
-            f"host=db.local port=5432 dbname={PG_NAME} user={PG_USER} password={PG_PASS}",
+            f"host=db.local port=5432 dbname={config.PG_NAME} user={config.PG_USER} password={config.PG_PASS}",
             min_size=1,
             max_size=10,
             max_idle=300 # idle timeout in seconds

@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Response, status
 from datetime import datetime, timezone
 
-health_router = APIRouter(tags=["kubernetes", "status"])
+health_router = APIRouter(tags=["health", "kubernetes", "status"])
+
 
 @health_router.get("/healthz")
 def get_liveness(response: Response):
