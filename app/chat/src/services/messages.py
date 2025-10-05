@@ -34,6 +34,8 @@ async def handle_redis_messages(user_id: UUID, channels: list[str]):
     try:
         async for message in pubsub.listen():
             # Forward message to this user's WebSocket
-            await websocket_manager.send(user_id, list(message))
+            if str(message[2]) == str(user_id):
+                await websocket_manager.send(user_id, list(message))
+
     finally:
         await pubsub.unsubscribe(*channels)
