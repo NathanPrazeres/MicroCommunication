@@ -3,7 +3,7 @@ from fastapi import (
     WebSocket
 )
 from utils.websocket_manager import websocket_manager
-from utils.validation import jwt_validator
+from auth.token import decode_jwt
 from repositories.db_postgres import postgres_client
 from services.messages import handle_client_messages, handle_redis_messages
 import asyncio
@@ -19,8 +19,8 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
     TODO: are we using chat.local or some other domain?
     """
     try:
-        claims = jwt_validator.verify(token)
-        user_id = claims.sub
+        claims = decode_jwt(token)
+        user_id = claims.get("sub")
     except:
         await websocket.close(code=1008) # Policy violation
         return

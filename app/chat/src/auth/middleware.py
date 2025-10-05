@@ -1,12 +1,12 @@
-from os import environ as env
 import jwt
 from fastapi import (
     Response,
     status,
     Request,
 )
+from config import JWT_PUB_KEY
+from auth.token import decode_jwt
 
-JWT_PUB_KEY = env.get("JWT_PUBLIC_KEY")
 
 async def verify_token(req: Request, call_next):
     if JWT_PUB_KEY is None:
@@ -27,16 +27,17 @@ async def verify_token(req: Request, call_next):
         )
 
     try:
-        payload = jwt.decode(
-            jwt=token,
-            key=JWT_PUB_KEY,
-            algorithms=["RS256"]
-        )
+        payload = decode_jwt(token=token)
 
         # Setting the user_id in the state to be used later
         # when looking up info from the database (if needed)
         req.state.user_id = payload.get("sub")
-    except jwt.DecodeError:
+    except jwt.exceptions.MissingRequiredClaimError:
+        return Response(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content="Token doesn't contain a subject field"
+        )
+    except jwt.exceptions.PyJWTError:
         return Response(
             status_code=status.HTTP_400_BAD_REQUEST,
             content="Invalid or expired token"
