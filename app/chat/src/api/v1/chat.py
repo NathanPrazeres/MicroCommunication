@@ -1,15 +1,20 @@
 from fastapi import (
     APIRouter,
-    WebSocket
+    WebSocket,
+    Depends
 )
 from utils.websocket_manager import websocket_manager
 from auth.token import decode_jwt
+from src.auth.dependencies import verify_token
 from repositories.db_postgres import postgres_client
 from services.messages import handle_client_messages, handle_redis_messages
 import asyncio
-from uuid import UUID
 
-chat_router = APIRouter(prefix="/api/v1", tags=["chat"])
+chat_router = APIRouter(
+    prefix="/api/v1",
+    tags=["chat"],
+    dependencies=[Depends(verify_token)]
+)
 
 @chat_router.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket, token: str):
@@ -54,13 +59,17 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
         websocket_manager.disconnect(user_id)
 
 @chat_router.get("/rooms")
-def get_rooms():
+def get_rooms(claims=Depends(verify_token)):
     pass
 
 @chat_router.post("/rooms")
-def create_room():
+def create_room(claims=Depends(verify_token)):
     pass
 
 @chat_router.get("/rooms/{room_id}/users")
-def get_room_users(room_id: int):
+def get_room_users(room_id: int, claims=Depends(verify_token)):
     postgres_client.get_room_users(room_id)
+
+@chat_router.put("/rooms/{room_id}/users")
+def add_room_user(room_id: int, claims=Depends(verify_token)):
+    pass
