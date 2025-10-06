@@ -134,6 +134,34 @@ class PostgresClient:
                 )
                 return (await curr.fetchone()) is not None
 
+    async def add_user_room(self, user_id: UUID, room_id: UUID) -> None:
+        """
+        Add a user to the room.
+        """
+        async with self.pool.connection() as conn:
+            async with conn.cursor() as curr:
+                await curr.execute(
+                    "INSERT INTO room_participants (room_id, user_id) VALUES (%s, %s)",
+                    (room_id, user_id)
+                )
+
+    async def is_user_admin(self, user_id: UUID, room_id: UUID) -> bool:
+        """
+        Checks whether a user is an admin (or owner) in a given room.
+        """
+        async with self.pool.connection() as conn:
+            async with conn.cursor() as curr:
+                await curr.execute(
+                    """
+                    SELECT 1
+                    FROM room_participants
+                    WHERE room_id = %s AND user_id = %s AND (role = 'admin' OR role = 'owner')
+                    LIMIT 1
+                    """,
+                    (room_id, user_id)
+                )
+                return (await curr.fetchone()) is not None
+
     async def get_user_rooms(self, user_id: UUID) -> list[UUID]:
         """
         Get a list of rooms a given user belongs to.

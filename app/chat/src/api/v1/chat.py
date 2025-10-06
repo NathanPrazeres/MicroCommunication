@@ -3,6 +3,7 @@ from fastapi import (
     WebSocket,
     status,
     HTTPException,
+    Body,
     Depends
 )
 from utils.websocket_manager import websocket_manager
@@ -11,6 +12,8 @@ from src.auth.dependencies import verify_token
 from repositories.db_postgres import postgres_client
 from services.messages import handle_client_messages, handle_redis_messages
 import asyncio
+from uuid import UUID
+from models.requests import AddRoomUserRequest
 
 chat_router = APIRouter(
     prefix="/api/v1",
@@ -69,7 +72,7 @@ async def create_room(claims=Depends(verify_token)):
     pass
 
 @chat_router.get("/rooms/{room_id}/users")
-async def get_room_users(room_id: int, claims=Depends(verify_token)):
+async def get_room_users(room_id: UUID, claims=Depends(verify_token)):
     user_id = claims.get("sub")
     if not await postgres_client.user_in_room(user_id, room_id):
         raise HTTPException(
@@ -80,5 +83,25 @@ async def get_room_users(room_id: int, claims=Depends(verify_token)):
     return {"users": users}
 
 @chat_router.put("/rooms/{room_id}/users")
-async def add_room_user(room_id: int, claims=Depends(verify_token)):
-    pass
+async def add_room_user(
+    room_id: UUID,
+    req: AddRoomUserRequest = Body(...),
+    claims=Depends(verify_token)
+):
+    # The new user ID is sent in the request body as JSON: { "user_id": "<uuid>" }
+    user_id = claims.get("sub")
+    new_user_id = req.user_id
+    if not new_user_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="You must provide a user ID to add to the room."
+        )
+
+    if await postgres_client.user_in_room(new_user_id, room_id):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"User {new_user_id} is already a memeber of room {room_id}."
+        )
+
+    await postgres_client.add_user_room(new_user_id, room_id)
+    return {"detail": f"User {new_user_id} added to room {room_id}."}
