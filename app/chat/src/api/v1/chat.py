@@ -1,6 +1,8 @@
 from fastapi import (
     APIRouter,
     WebSocket,
+    status,
+    HTTPException,
     Depends
 )
 from utils.websocket_manager import websocket_manager
@@ -59,17 +61,24 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
         websocket_manager.disconnect(user_id)
 
 @chat_router.get("/rooms")
-def get_rooms(claims=Depends(verify_token)):
+async def get_rooms(claims=Depends(verify_token)):
     pass
 
 @chat_router.post("/rooms")
-def create_room(claims=Depends(verify_token)):
+async def create_room(claims=Depends(verify_token)):
     pass
 
 @chat_router.get("/rooms/{room_id}/users")
-def get_room_users(room_id: int, claims=Depends(verify_token)):
-    postgres_client.get_room_users(room_id)
+async def get_room_users(room_id: int, claims=Depends(verify_token)):
+    user_id = claims.get("sub")
+    if not await postgres_client.user_in_room(user_id, room_id):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You aren't a member of this room."
+        )
+    users = await postgres_client.get_room_users(room_id)
+    return {"users": users}
 
 @chat_router.put("/rooms/{room_id}/users")
-def add_room_user(room_id: int, claims=Depends(verify_token)):
+async def add_room_user(room_id: int, claims=Depends(verify_token)):
     pass
