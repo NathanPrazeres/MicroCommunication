@@ -1,3 +1,0 @@
-galaxy_info:
-  author: agisit25-g20
-  description: Kubernetes Control Plane for Debian Linux (adapted from https://github.com/geerlingguy/ansible-role-kubernetes/blob/master/meta/main.yml)
