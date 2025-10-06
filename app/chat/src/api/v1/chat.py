@@ -51,6 +51,6 @@ def get_rooms():
 def create_room():
     pass
 
-@chat_router.get("rooms/{room_id}/users")
+@chat_router.get("/rooms/{room_id}/users")
 def get_room_users(room_id: int):
     postgres_client.get_room_users(room_id)
