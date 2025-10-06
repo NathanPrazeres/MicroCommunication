@@ -6,6 +6,7 @@ from fastapi import (
 )
 from config import JWT_PUB_KEY
 from auth.token import decode_jwt
+from uuid import UUID
 
 
 async def verify_token(req: Request, call_next):
@@ -32,10 +33,12 @@ async def verify_token(req: Request, call_next):
         # Setting the user_id in the state to be used later
         # when looking up info from the database (if needed)
         req.state.user_id = payload.get("sub")
+        if req.state.user_id is None:
+            raise jwt.exceptions.MissingRequiredClaimError()
     except jwt.exceptions.MissingRequiredClaimError:
         return Response(
             status_code=status.HTTP_400_BAD_REQUEST,
-            content="Token doesn't contain a subject field"
+            content="Token doesn't contain a valid subject field"
         )
     except jwt.exceptions.PyJWTError:
         return Response(

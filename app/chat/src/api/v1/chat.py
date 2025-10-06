@@ -7,6 +7,7 @@ from auth.token import decode_jwt
 from repositories.db_postgres import postgres_client
 from services.messages import handle_client_messages, handle_redis_messages
 import asyncio
+from uuid import UUID
 
 chat_router = APIRouter(prefix="/api/v1", tags=["chat"])
 
@@ -21,27 +22,36 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
     try:
         claims = decode_jwt(token)
         user_id = claims.get("sub")
+        # TODO: make sure this is necessary and works
+        if user_id is None:
+            raise ValueError() # trigger the except block
     except:
         await websocket.close(code=1008) # Policy violation
         return
 
     await websocket_manager.connect(user_id, websocket)
 
-    user_rooms = await postgres_client.get_user_rooms(user_id)
-    user_channels = [f"room:{r}" for r in user_rooms]
+    try:
+        user_rooms = await postgres_client.get_user_rooms(user_id)
+        user_channels = [f"room:{r}" for r in user_rooms]
 
-    client_task = asyncio.create_task(handle_client_messages(user_id))
-    redis_task = asyncio.create_task(handle_redis_messages(user_id, user_channels))
+        client_task = asyncio.create_task(handle_client_messages(user_id))
+        redis_task = asyncio.create_task(handle_redis_messages(user_id, user_channels))
 
-    _, pending = await asyncio.wait(
-        [client_task, redis_task],
-        return_when=asyncio.FIRST_COMPLETED
-    )
+        _, pending = await asyncio.wait(
+            [client_task, redis_task],
+            return_when=asyncio.FIRST_COMPLETED
+        )
 
-    for task in pending:
-        task.cancel()
+        for task in pending:
+            task.cancel()
+            try:
+                await task
+            except asyncio.CancelledError:
+                pass
 
-    websocket_manager.disconnect(user_id)
+    finally:
+        websocket_manager.disconnect(user_id)
 
 @chat_router.get("/rooms")
 def get_rooms():
