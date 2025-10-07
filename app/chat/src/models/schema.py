@@ -4,6 +4,10 @@ from typing import Optional, Literal
 from models.dto import MessageDto
 
 
+class ErrorMessage(BaseModel):
+    error: Optional[str] = None
+    status: Literal["error"] = "error"
+
 class RoomControlMessage(BaseModel):
     status: Literal["added", "removed", "promoted"]
     room_id: UUID
@@ -17,6 +21,5 @@ class MessageRequest(BaseModel):
     reply_to_id: Optional[UUID] = None
 
 class MessageResponse(BaseModel):
-    status: Literal["success", "error"]
     message: Optional[MessageDto] = None
-    error: Optional[str] = None
+    status: Literal["ok"] = "ok"

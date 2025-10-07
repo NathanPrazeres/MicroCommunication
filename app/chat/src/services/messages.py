@@ -3,7 +3,8 @@ from repositories.db_postgres import postgres_client
 from repositories.pubsub_redis import redis_client
 from fastapi import WebSocketDisconnect
 from uuid import UUID
-from models.schema import MessageRequest, MessageResponse, RoomControlMessage
+from pydantic import ValidationError
+from models.schema import MessageRequest, MessageResponse, RoomControlMessage, ErrorMessage
 from models.dto import MessageDto
 
 
@@ -18,7 +19,7 @@ async def handle_client_messages(user_id: UUID):
             if message is None:
                 await websocket_manager.send(
                     user_id,
-                    MessageResponse(status="error", error="Unauthorized message request.")
+                    ErrorMessage(error="Unauthorized message request.")
                 )
                 continue
 
@@ -28,43 +29,49 @@ async def handle_client_messages(user_id: UUID):
             # Send confirmation back to frontend
             await websocket_manager.send(
                 user_id,
-                MessageResponse(status="success", message=message)
+                MessageResponse(message=message)
             )
 
     except WebSocketDisconnect:
         websocket_manager.disconnect(user_id)
 
-async def handle_redis_messages(user_id: UUID, channels: list[str]):
+async def handle_redis_messages(user_id: UUID, room_channels: list[str]):
     pubsub = redis_client.pubsub()
     user_channel = f"user:{user_id}"
-    await pubsub.subscribe(*(channels + [user_channel]))
+    channels = room_channels + [user_channel]
+    await pubsub.subscribe(*channels)
 
     try:
         async for message in pubsub.listen():
             channel = message['channel']
             data = message['data']
-            if channel == user_channel:
-                # This is a control message for the user
-                control = RoomControlMessage.model_validate_json(data)
-                status = control.status
-                room_id = control.room_id
+            try:
+                if channel == user_channel:
+                    # This is a control message for the user
+                        control = RoomControlMessage.model_validate_json(data)
+                        status = control.status
+                        room_id = control.room_id
 
-                if status == "added":
-                    # Subscribe to the new room channel
-                    await pubsub.subscribe(f"room:{room_id}")
-                elif status == "removed":
-                    await pubsub.unsubscribe(f"room:{room_id}")
+                        if status == "added":
+                            # Subscribe to the new room channel
+                            await pubsub.subscribe(f"room:{room_id}")
+                        elif status == "removed":
+                            await pubsub.unsubscribe(f"room:{room_id}")
 
-                # Notify user
+                        # Notify user
+                        await websocket_manager.send(
+                            user_id,
+                            control
+                        )
+                else:
+                    # Forward message to this user's WebSocket
+                    msg = MessageDto.model_validate_json(data)
+                    if msg.sender_id != user_id:
+                        await websocket_manager.send(user_id, msg)
+            except ValidationError:
                 await websocket_manager.send(
                     user_id,
-                    control
+                    ErrorMessage(error=f"Error parsing JSON: {data}")
                 )
-            else:
-                # Forward message to this user's WebSocket
-                msg = MessageDto.model_validate_json(data)
-                if msg.sender_id != user_id:
-                    await websocket_manager.send(user_id, msg)
-
     finally:
         await pubsub.unsubscribe(*channels)
