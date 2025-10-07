@@ -46,28 +46,20 @@ async def handle_redis_messages(user_id: UUID, channels: list[str]):
             if channel == user_channel:
                 # This is a control message for the user
                 control = RoomControlMessage.model_validate_json(data)
-                status = control["status"]
-                room_id = control["room_id"]
+                status = control.status
+                room_id = control.room_id
 
                 if status == "added":
                     # Subscribe to the new room channel
                     await pubsub.subscribe(f"room:{room_id}")
-                    # Optionally notify frontend
-                    await websocket_manager.send(
-                        user_id,
-                        RoomControlMessage("added", room_id)
-                    )
                 elif status == "removed":
                     await pubsub.unsubscribe(f"room:{room_id}")
-                    await websocket_manager.send(
-                        user_id,
-                        RoomControlMessage("removed", room_id)
-                    )
-                elif status == "promoted":
-                    await websocket_manager.send(
-                        user_id,
-                        RoomControlMessage("promoted", room_id)
-                    )
+
+                # Notify user
+                await websocket_manager.send(
+                    user_id,
+                    control
+                )
             else:
                 # Forward message to this user's WebSocket
                 msg = MessageDto.model_validate_json(data)
