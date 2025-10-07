@@ -13,7 +13,8 @@ from repositories.db_postgres import postgres_client
 from services.messages import handle_client_messages, handle_redis_messages
 import asyncio
 from uuid import UUID
-from models.requests import AddRoomUserRequest
+from src.models.schema import AddRoomUserRequest
+
 
 chat_router = APIRouter(
     prefix="/api/v1",

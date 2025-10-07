@@ -3,27 +3,32 @@ from repositories.db_postgres import postgres_client
 from repositories.pubsub_redis import redis_client
 from fastapi import WebSocketDisconnect
 from uuid import UUID
+from src.models.schema import MessageRequest, MessageResponse
 
 
 async def handle_client_messages(user_id: UUID):
     try:
         while True:
             data = await websocket_manager.get_ws(user_id).receive_json()
-            # {"type": "message", "room_id": 123, "content": "Lorem Ipsum"}
-            if data["type"] == "message":
-                room_id = data["room_id"]
-                content = data["content"]
+            # data = {"room_id": 123, "content": "Lorem Ipsum", "reply_to_id": null}
+            msg_req = MessageRequest(**data)
 
-                # TODO: remove this, for testing purposes only
-                await websocket_manager.send(user_id, f"You wrote: {content}")
+            message = await postgres_client.send_message(user_id, msg_req.room_id, msg_req.content)
+            if message is None:
+                await websocket_manager.send(
+                    user_id,
+                    MessageResponse(status="error", error="Unauthorized message request.")
+                )
+                continue
 
-                message = await postgres_client.send_message(user_id, room_id, content)
-                if message is None:
-                    # TODO: give some kind of error to the frontend for unauthorized access
-                    continue
+            # Publish to Redis so all other clients get it
+            await redis_client.publish(f"room:{msg_req.room_id}", message)
 
-                # Publish to Redis so all other clients get it
-                await redis_client.publish(f"room:{room_id}", message)
+            # Send confirmation back to frontend
+            await websocket_manager.send(
+                user_id,
+                MessageResponse(status="success", message=message)
+            )
 
     except WebSocketDisconnect:
         websocket_manager.disconnect(user_id)
