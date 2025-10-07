@@ -15,8 +15,8 @@ from services.messages import handle_client_messages, handle_redis_messages
 import asyncio
 from uuid import UUID
 from models.schema import (
-    AddRoomUserRequest,
-    AddRoomUserResponse,
+    AddRemoveRoomUserRequest,
+    AddRemoveRoomUserResponse,
     GetRoomUsersResponse,
     RoomControlMessage
 )
@@ -89,10 +89,10 @@ async def get_room_users(room_id: UUID, claims: dict = Depends(verify_token)):
     users = await postgres_client.get_room_users(room_id)
     return GetRoomUsersResponse(users=users)
 
-@chat_router.put("/rooms/{room_id}/users", response_model=AddRoomUserResponse)
+@chat_router.put("/rooms/{room_id}/users", response_model=AddRemoveRoomUserResponse)
 async def add_room_user(
     room_id: UUID,
-    req: AddRoomUserRequest = Body(...),
+    req: AddRemoveRoomUserRequest = Body(...),
     claims: dict = Depends(verify_token)
 ):
     # The new user ID is sent in the request body as JSON: { "user_id": "<uuid>" }
@@ -117,4 +117,34 @@ async def add_room_user(
         RoomControlMessage(room_id=room_id, status="added")
     ) # Notify the user that they have been added
 
-    return AddRoomUserResponse(message=f"User {new_user_id} added to room {room_id}.")
+    return AddRemoveRoomUserResponse(message=f"User {new_user_id} added to room {room_id}.")
+
+@chat_router.delete("/rooms/{room_id}/users", response_model=AddRemoveRoomUserResponse)
+async def remove_room_user(
+    room_id: UUID,
+    req: AddRemoveRoomUserRequest = Body(...),
+    claims: dict = Depends(verify_token)
+):
+    # The removed user ID is sent in the request body as JSON: { "user_id": "<uuid>" }
+    user_id = claims.get("sub")
+    # TODO: verify that the user doing the removing is an admin
+    removed_user_id = req.user_id
+    if not removed_user_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="You must provide a user ID to remove from the room."
+        )
+
+    if not await postgres_client.user_in_room(removed_user_id, room_id):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"User {removed_user_id} is not a memeber of room {room_id}."
+        )
+
+    await postgres_client.add_user_room(removed_user_id, room_id)
+    await redis_client.publish(
+        f"user:{removed_user_id}",
+        RoomControlMessage(room_id=room_id, status="removed")
+    ) # Notify the user that they have been removed
+
+    return AddRemoveRoomUserResponse(message=f"User {removed_user_id} removed from room {room_id}.")

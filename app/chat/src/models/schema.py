@@ -12,10 +12,10 @@ class RoomControlMessage(BaseModel):
     room_id: UUID
     status: Literal["added", "removed", "promoted"]
 
-class AddRoomUserRequest(BaseModel):
+class AddRemoveRoomUserRequest(BaseModel):
     user_id: UUID
 
-class AddRoomUserResponse(BaseModel):
+class AddRemoveRoomUserResponse(BaseModel):
     message: str
 
 class GetRoomUsersResponse(BaseModel):
