@@ -15,6 +15,9 @@ class RoomControlMessage(BaseModel):
 class AddRoomUserRequest(BaseModel):
     user_id: UUID
 
+class AddRoomUserResponse(BaseModel):
+    message: str
+
 class MessageRequest(BaseModel):
     room_id: UUID
     content: str

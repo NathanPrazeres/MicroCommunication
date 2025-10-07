@@ -8,12 +8,12 @@ from fastapi import (
 )
 from utils.websocket_manager import websocket_manager
 from auth.token import decode_jwt
-from src.auth.dependencies import verify_token
+from auth.dependencies import verify_token
 from repositories.db_postgres import postgres_client
 from services.messages import handle_client_messages, handle_redis_messages
 import asyncio
 from uuid import UUID
-from src.models.schema import AddRoomUserRequest
+from models.schema import AddRoomUserRequest, AddRoomUserResponse
 
 
 chat_router = APIRouter(
@@ -83,7 +83,7 @@ async def get_room_users(room_id: UUID, claims: dict = Depends(verify_token)):
     users = await postgres_client.get_room_users(room_id)
     return {"data": users}
 
-@chat_router.put("/rooms/{room_id}/users")
+@chat_router.put("/rooms/{room_id}/users", response_model=AddRoomUserResponse)
 async def add_room_user(
     room_id: UUID,
     req: AddRoomUserRequest = Body(...),
@@ -105,4 +105,4 @@ async def add_room_user(
         )
 
     await postgres_client.add_user_room(new_user_id, room_id)
-    return {"message": f"User {new_user_id} added to room {room_id}."}
+    return AddRoomUserResponse(message=f"User {new_user_id} added to room {room_id}.")
