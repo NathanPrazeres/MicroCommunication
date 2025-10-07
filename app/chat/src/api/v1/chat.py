@@ -13,7 +13,11 @@ from repositories.db_postgres import postgres_client
 from services.messages import handle_client_messages, handle_redis_messages
 import asyncio
 from uuid import UUID
-from models.schema import AddRoomUserRequest, AddRoomUserResponse
+from models.schema import (
+    AddRoomUserRequest,
+    AddRoomUserResponse,
+    GetRoomUsersResponse
+)
 
 
 chat_router = APIRouter(
@@ -72,7 +76,7 @@ async def get_rooms(claims: dict = Depends(verify_token)):
 async def create_room(claims: dict = Depends(verify_token)):
     pass
 
-@chat_router.get("/rooms/{room_id}/users")
+@chat_router.get("/rooms/{room_id}/users", response_model=GetRoomUsersResponse)
 async def get_room_users(room_id: UUID, claims: dict = Depends(verify_token)):
     user_id = claims.get("sub")
     if not await postgres_client.user_in_room(user_id, room_id):
@@ -81,7 +85,7 @@ async def get_room_users(room_id: UUID, claims: dict = Depends(verify_token)):
             detail="You aren't a member of this room."
         )
     users = await postgres_client.get_room_users(room_id)
-    return {"data": users}
+    return GetRoomUsersResponse(users=users)
 
 @chat_router.put("/rooms/{room_id}/users", response_model=AddRoomUserResponse)
 async def add_room_user(
@@ -91,6 +95,7 @@ async def add_room_user(
 ):
     # The new user ID is sent in the request body as JSON: { "user_id": "<uuid>" }
     user_id = claims.get("sub")
+    # TODO: verify that the user doing the adding is an admin
     new_user_id = req.user_id
     if not new_user_id:
         raise HTTPException(
