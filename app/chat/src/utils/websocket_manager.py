@@ -8,7 +8,7 @@ class WebSocketManager:
     def __init__(self):
         self.active_connections: dict[UUID, WebSocket] = {}
 
-    def get_ws(self, user_id: UUID) -> WebSocket:
+    def get(self, user_id: UUID) -> WebSocket:
         return self.active_connections.get(user_id)
 
     async def connect(self, user_id: UUID, websocket: WebSocket):
@@ -22,7 +22,7 @@ class WebSocketManager:
         ws = self.active_connections.get(user_id)
         if ws is None:
             return
-        # If it's a Pydantic model, convert to dict
+        # If it's a Pydantic model, convert to json
         if isinstance(message, BaseModel):
             await ws.send_json(message.model_dump_json())
         else:

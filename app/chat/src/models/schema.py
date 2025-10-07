@@ -4,6 +4,10 @@ from typing import Optional, Literal
 from models.dto import MessageDto
 
 
+class RoomControlMessage(BaseModel):
+    status: Literal["added", "removed", "promoted"]
+    room_id: UUID
+
 class AddRoomUserRequest(BaseModel):
     user_id: UUID
 
