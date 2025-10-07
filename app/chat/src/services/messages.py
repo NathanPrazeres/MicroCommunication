@@ -49,8 +49,8 @@ async def handle_redis_messages(user_id: UUID, room_channels: list[str]):
                 if channel == user_channel:
                     # This is a control message for the user
                         control = RoomControlMessage.model_validate_json(data)
-                        status = control.status
                         room_id = control.room_id
+                        status = control.status
 
                         if status == "added":
                             # Subscribe to the new room channel

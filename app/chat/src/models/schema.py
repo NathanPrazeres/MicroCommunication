@@ -9,8 +9,8 @@ class ErrorMessage(BaseModel):
     status: Literal["error"] = "error"
 
 class RoomControlMessage(BaseModel):
-    status: Literal["added", "removed", "promoted"]
     room_id: UUID
+    status: Literal["added", "removed", "promoted"]
 
 class AddRoomUserRequest(BaseModel):
     user_id: UUID

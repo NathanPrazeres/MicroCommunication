@@ -10,13 +10,15 @@ from utils.websocket_manager import websocket_manager
 from auth.token import decode_jwt
 from auth.dependencies import verify_token
 from repositories.db_postgres import postgres_client
+from repositories.pubsub_redis import redis_client
 from services.messages import handle_client_messages, handle_redis_messages
 import asyncio
 from uuid import UUID
 from models.schema import (
     AddRoomUserRequest,
     AddRoomUserResponse,
-    GetRoomUsersResponse
+    GetRoomUsersResponse,
+    RoomControlMessage
 )
 
 
@@ -110,4 +112,9 @@ async def add_room_user(
         )
 
     await postgres_client.add_user_room(new_user_id, room_id)
+    await redis_client.publish(
+        f"user:{new_user_id}",
+        RoomControlMessage(room_id=room_id, status="added")
+    ) # Notify the user that they have been added
+
     return AddRoomUserResponse(message=f"User {new_user_id} added to room {room_id}.")
