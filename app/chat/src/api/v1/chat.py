@@ -80,7 +80,7 @@ async def get_room_users(room_id: UUID, claims=Depends(verify_token)):
             detail="You aren't a member of this room."
         )
     users = await postgres_client.get_room_users(room_id)
-    return {"users": users}
+    return {"data": users}
 
 @chat_router.put("/rooms/{room_id}/users")
 async def add_room_user(
@@ -104,4 +104,4 @@ async def add_room_user(
         )
 
     await postgres_client.add_user_room(new_user_id, room_id)
-    return {"detail": f"User {new_user_id} added to room {room_id}."}
+    return {"message": f"User {new_user_id} added to room {room_id}."}

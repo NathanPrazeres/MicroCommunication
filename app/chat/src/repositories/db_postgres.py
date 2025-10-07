@@ -2,6 +2,7 @@ from uuid import UUID
 from psycopg_pool import AsyncConnectionPool
 from typing import Optional
 import config
+from models.dto import MessageDto, UserDto
 
 
 class PostgresClient:
@@ -35,7 +36,7 @@ class PostgresClient:
                 users = await curr.fetchall()
         return [u[0] for u in users]
 
-    async def get_contacts(self, user_id: UUID) -> list[tuple]:
+    async def get_contacts(self, user_id: UUID) -> list[UserDto]:
         """
         Fetches contacts of a user and returns their user IDs and names.
         """
@@ -46,7 +47,12 @@ class PostgresClient:
                     (user_id,)
                 )
                 users = await curr.fetchall()
-        return users
+
+        user_list: list[UserDto] = []
+        for user in users:
+            user_list.append(UserDto(id=user[0], username=user[1]))
+
+        return user_list
 
     async def create_room(
         self,
@@ -96,9 +102,9 @@ class PostgresClient:
 
         return room_id
 
-    async def send_message(self, user_id: UUID, room_id: UUID, content: str) -> Optional[tuple]:
+    async def send_message(self, user_id: UUID, room_id: UUID, content: str) -> Optional[MessageDto]:
         """
-        Creates a message entry in the database and returns the message ID.
+        Creates a message entry in the database and returns the message.
 
         Returns None when the message can't be sent.
         """
@@ -115,7 +121,18 @@ class PostgresClient:
                     """,
                     (room_id, user_id, content)
                 )
-                return (await curr.fetchone())
+                msg = await curr.fetchone()
+                return MessageDto(
+                    id=msg[0],
+                    room_id=msg[1],
+                    sender_id=msg[2],
+                    content=msg[3],
+                    message_type=msg[4],
+                    reply_to_id=msg[5],
+                    created_at=msg[6],
+                    updated_at=msg[7],
+                    deleted_at=msg[8],
+                )
 
     async def user_in_room(self, user_id: UUID, room_id: UUID) -> bool:
         """
