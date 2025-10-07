@@ -1,6 +1,5 @@
 import jwt
 from fastapi import (
-    Response,
     status,
     HTTPException,
     Depends
@@ -9,10 +8,10 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from config import JWT_PUB_KEY
 from auth.token import decode_jwt
 
+
 bearer_scheme = HTTPBearer(auto_error=False)
 
-
-async def verify_token(credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme)):
+def verify_token(credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme)):
     """
     Dependency to be used by FastAPI endpoints.
 

@@ -65,15 +65,15 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
         websocket_manager.disconnect(user_id)
 
 @chat_router.get("/rooms")
-async def get_rooms(claims=Depends(verify_token)):
+async def get_rooms(claims: dict = Depends(verify_token)):
     pass
 
 @chat_router.post("/rooms")
-async def create_room(claims=Depends(verify_token)):
+async def create_room(claims: dict = Depends(verify_token)):
     pass
 
 @chat_router.get("/rooms/{room_id}/users")
-async def get_room_users(room_id: UUID, claims=Depends(verify_token)):
+async def get_room_users(room_id: UUID, claims: dict = Depends(verify_token)):
     user_id = claims.get("sub")
     if not await postgres_client.user_in_room(user_id, room_id):
         raise HTTPException(
@@ -87,7 +87,7 @@ async def get_room_users(room_id: UUID, claims=Depends(verify_token)):
 async def add_room_user(
     room_id: UUID,
     req: AddRoomUserRequest = Body(...),
-    claims=Depends(verify_token)
+    claims: dict = Depends(verify_token)
 ):
     # The new user ID is sent in the request body as JSON: { "user_id": "<uuid>" }
     user_id = claims.get("sub")
