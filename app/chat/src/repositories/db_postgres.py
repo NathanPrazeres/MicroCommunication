@@ -23,6 +23,18 @@ class PostgresClient:
         """Close the pool when FastAPI shuts down"""
         await self.pool.close()
 
+    async def is_valid_user(self, user_id: UUID) -> bool:
+        """
+        Checks whether a user_id exists in the users table.
+        """
+        async with self.pool.connection() as conn:
+            async with conn.cursor() as curr:
+                await curr.execute(
+                    "SELECT 1 FROM users WHERE id = %s LIMIT 1",
+                    (user_id,)
+                )
+                return (await curr.fetchone()) is not None
+
     async def get_room_users(self, room_id: UUID) -> list[UUID]:
         """
         Fetches users in a room and returns their user IDs.
@@ -122,6 +134,8 @@ class PostgresClient:
                     (room_id, user_id, content)
                 )
                 msg = await curr.fetchone()
+                if msg is None:
+                    return None
                 return MessageDto(
                     id=msg[0],
                     room_id=msg[1],
@@ -155,6 +169,9 @@ class PostgresClient:
         """
         Add a user to the room.
         """
+        if not self.is_valid_user(user_id):
+            return None
+
         async with self.pool.connection() as conn:
             async with conn.cursor() as curr:
                 await curr.execute(
