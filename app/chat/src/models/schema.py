@@ -10,13 +10,18 @@ class ErrorMessage(BaseModel):
 
 class RoomControlMessage(BaseModel):
     room_id: UUID
-    status: Literal["added", "removed", "promoted"]
+    status: Literal["added", "removed", "promoted", "demoted"]
 
 class AddRemoveRoomUserRequest(BaseModel):
     user_id: UUID
 
-class AddRemoveRoomUserResponse(BaseModel):
+class PromoteDemoteRoomUserRequest(BaseModel):
+    user_id: UUID
+    role: Literal["member", "admin"]
+
+class TextResponse(BaseModel):
     message: str
+    status: Literal["ok"] = "ok" # Might change this later
 
 class GetRoomUsersResponse(BaseModel):
     users: list[UUID]

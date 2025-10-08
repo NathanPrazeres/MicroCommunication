@@ -165,7 +165,7 @@ class PostgresClient:
                 )
                 return (await curr.fetchone()) is not None
 
-    async def add_user_room(self, user_id: UUID, room_id: UUID) -> None:
+    async def add_room_user(self, user_id: UUID, room_id: UUID) -> None:
         """
         Add a user to the room.
         """
@@ -187,6 +187,28 @@ class PostgresClient:
             async with conn.cursor() as curr:
                 await curr.execute(
                     "DELETE FROM room_participants WHERE room_id = %s AND user_id = %s",
+                    (room_id, user_id)
+                )
+
+    async def promote_room_user(self, user_id: UUID, room_id: UUID) -> None:
+        """
+        Promote a user to admin in the room.
+        """
+        async with self.pool.connection() as conn:
+            async with conn.cursor() as curr:
+                await curr.execute(
+                    "UPDATE room_participants SET role = 'admin' WHERE room_id = %s AND user_id = %s",
+                    (room_id, user_id)
+                )
+
+    async def demote_room_user(self, user_id: UUID, room_id: UUID) -> None:
+        """
+        Demote a user from admin to member in the room.
+        """
+        async with self.pool.connection() as conn:
+            async with conn.cursor() as curr:
+                await curr.execute(
+                    "UPDATE room_participants SET role = 'member' WHERE room_id = %s AND user_id = %s",
                     (room_id, user_id)
                 )
 

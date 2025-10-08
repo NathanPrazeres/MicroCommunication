@@ -16,7 +16,8 @@ import asyncio
 from uuid import UUID
 from models.schema import (
     AddRemoveRoomUserRequest,
-    AddRemoveRoomUserResponse,
+    PromoteDemoteRoomUserRequest,
+    TextResponse,
     GetRoomUsersResponse,
     RoomControlMessage
 )
@@ -89,15 +90,15 @@ async def get_room_users(room_id: UUID, claims: dict = Depends(verify_token)):
     users = await postgres_client.get_room_users(room_id)
     return GetRoomUsersResponse(users=users)
 
-@chat_router.put("/rooms/{room_id}/users", response_model=AddRemoveRoomUserResponse)
+@chat_router.put("/rooms/{room_id}/users", response_model=TextResponse)
 async def add_room_user(
     room_id: UUID,
     req: AddRemoveRoomUserRequest = Body(...),
     claims: dict = Depends(verify_token)
 ):
-    # The new user ID is sent in the request body as JSON: { "user_id": "<uuid>" }
     user_id = claims.get("sub")
     # TODO: verify that the user doing the adding is an admin
+    # The new user ID is sent in the request body as JSON: { "user_id": "<uuid>" }
     new_user_id = req.user_id
     if not new_user_id:
         raise HTTPException(
@@ -111,23 +112,23 @@ async def add_room_user(
             detail=f"User {new_user_id} is already a memeber of room {room_id}."
         )
 
-    await postgres_client.add_user_room(new_user_id, room_id)
+    await postgres_client.add_room_user(new_user_id, room_id)
     await redis_client.publish(
         f"user:{new_user_id}",
         RoomControlMessage(room_id=room_id, status="added")
     ) # Notify the user that they have been added
 
-    return AddRemoveRoomUserResponse(message=f"User {new_user_id} added to room {room_id}.")
+    return TextResponse(message=f"User {new_user_id} added to room {room_id}.")
 
-@chat_router.delete("/rooms/{room_id}/users", response_model=AddRemoveRoomUserResponse)
+@chat_router.delete("/rooms/{room_id}/users", response_model=TextResponse)
 async def remove_room_user(
     room_id: UUID,
     req: AddRemoveRoomUserRequest = Body(...),
     claims: dict = Depends(verify_token)
 ):
-    # The removed user ID is sent in the request body as JSON: { "user_id": "<uuid>" }
     user_id = claims.get("sub")
     # TODO: verify that the user doing the removing is an admin
+    # The removed user ID is sent in the request body as JSON: { "user_id": "<uuid>" }
     removed_user_id = req.user_id
     if not removed_user_id:
         raise HTTPException(
@@ -147,4 +148,65 @@ async def remove_room_user(
         RoomControlMessage(room_id=room_id, status="removed")
     ) # Notify the user that they have been removed
 
-    return AddRemoveRoomUserResponse(message=f"User {removed_user_id} removed from room {room_id}.")
+    return TextResponse(message=f"User {removed_user_id} removed from room {room_id}.")
+
+@chat_router.patch("/rooms/{room_id}/users", response_model=TextResponse)
+async def promote_demote(
+    room_id: UUID,
+    req: PromoteDemoteRoomUserRequest = Body(...),
+    claims: dict = Depends(verify_token)
+):
+    user_id = claims.get("sub")
+    if not await postgres_client.is_user_admin(user_id=user_id, room_id=room_id):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You must be an admin or owner to promote or demote."
+        )
+    # NOTE: with the current logic, an admin can demote the owner
+
+    # The body of the request will be: { "user_id": "<uuid>", "role": "admin" | "member" }
+    uid = req.user_id
+    if not uid:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="You must provide a user ID to promote/demote."
+        )
+
+    match req.role:
+        case "admin":
+            if await postgres_client.is_user_admin(uid, room_id):
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail=f"User {uid} is already an admin of room {room_id}."
+                )
+
+            await postgres_client.promote_room_user(uid, room_id)
+            await redis_client.publish(
+                f"user:{uid}",
+                RoomControlMessage(room_id=room_id, status="promoted")
+            ) # Notify the user that they have been promoted
+
+            return TextResponse(message=f"User {uid} promoted in room {room_id}.")
+
+        case "member":
+            if not await postgres_client.is_user_admin(uid, room_id):
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail=f"User {uid} is already an member of room {room_id}."
+                )
+
+            await postgres_client.demote_room_user(uid, room_id)
+            await redis_client.publish(
+                f"user:{uid}",
+                RoomControlMessage(room_id=room_id, status="demoted")
+            ) # Notify the user that they have been demoted
+
+            return TextResponse(message=f"User {uid} demoted in room {room_id}.")
+
+        case _:
+            # This code block should be unreachable since the role needs to match one of
+            # the two or the request gets rejected by FastAPI (because of the req model)
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="You must provide a valid role for the user (member or admin)."
+            )
