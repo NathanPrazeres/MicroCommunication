@@ -179,6 +179,17 @@ class PostgresClient:
                     (room_id, user_id)
                 )
 
+    async def remove_room_user(self, user_id: UUID, room_id: UUID) -> None:
+        """
+        Remove a user from the room.
+        """
+        async with self.pool.connection() as conn:
+            async with conn.cursor() as curr:
+                await curr.execute(
+                    "DELETE FROM room_participants WHERE room_id = %s AND user_id = %s",
+                    (room_id, user_id)
+                )
+
     async def is_user_admin(self, user_id: UUID, room_id: UUID) -> bool:
         """
         Checks whether a user is an admin (or owner) in a given room.

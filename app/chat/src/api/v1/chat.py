@@ -141,7 +141,7 @@ async def remove_room_user(
             detail=f"User {removed_user_id} is not a memeber of room {room_id}."
         )
 
-    await postgres_client.add_user_room(removed_user_id, room_id)
+    await postgres_client.remove_room_user(removed_user_id, room_id)
     await redis_client.publish(
         f"user:{removed_user_id}",
         RoomControlMessage(room_id=room_id, status="removed")
