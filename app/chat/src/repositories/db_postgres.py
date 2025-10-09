@@ -2,7 +2,7 @@ from uuid import UUID
 from psycopg_pool import AsyncConnectionPool
 from typing import Optional
 import config
-from models.dto import MessageDto, UserDto
+from models.dto import MessageDto, UserDto, RoomDto
 
 
 class PostgresClient:
@@ -58,13 +58,12 @@ class PostgresClient:
                     "SELECT contact_id, nickname FROM contacts WHERE user_id = %s",
                     (user_id,)
                 )
-                users = await curr.fetchall()
+                rows = await curr.fetchall()
 
-        user_list: list[UserDto] = []
-        for user in users:
-            user_list.append(UserDto(id=user[0], username=user[1]))
-
-        return user_list
+        return [
+            UserDto(id=row[0], username=row[1])
+            for row in rows
+        ]
 
     async def create_room(
         self,
@@ -229,20 +228,33 @@ class PostgresClient:
                 )
                 return (await curr.fetchone()) is not None
 
-    async def get_user_rooms(self, user_id: UUID) -> list[UUID]:
+    async def get_user_rooms(self, user_id: UUID) -> list[RoomDto]:
         """
-        Get a list of rooms a given user belongs to.
+        Get all room info for rooms the user is a participant in.
         """
         async with self.pool.connection() as conn:
             async with conn.cursor() as curr:
                 await curr.execute(
-                    "SELECT room_id FROM room_participants WHERE user_id = %s",
+                    """
+                    SELECT r.id, r.name, r.description, r.room_type, r.created_by, r.created_at, r.updated_at
+                    FROM rooms r
+                    JOIN room_participants rp ON r.id = rp.room_id
+                    WHERE rp.user_id = %s
+                    """,
                     (user_id,)
                 )
-                rooms = await curr.fetchall()
-                if rooms is None:
-                    return []
-                return [r[0] for r in rooms]
-
+                rows = await curr.fetchall()
+        return [
+            RoomDto(
+                id=row[0],
+                name=row[1],
+                description=row[2],
+                room_type=row[3],
+                created_by=row[4],
+                created_at=row[5],
+                updated_at=row[6],
+            )
+            for row in rows
+        ]
 
 postgres_client = PostgresClient()

@@ -1,6 +1,7 @@
 from uuid import UUID
 from pydantic import BaseModel
 from datetime import datetime
+from typing import Optional, Literal
 
 class StatusDto(BaseModel):
     status: str
@@ -21,3 +22,12 @@ class MessageDto(BaseModel):
 class UserDto(BaseModel):
     id: UUID
     username: str
+
+class RoomDto(BaseModel):
+    id: UUID
+    name: Optional[str]
+    description: Optional[str]
+    room_type: Literal["direct", "group", "channel"]
+    created_by: UUID
+    created_at: datetime
+    updated_at: datetime

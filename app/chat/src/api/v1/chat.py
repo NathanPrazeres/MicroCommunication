@@ -15,9 +15,12 @@ from services.messages import handle_client_messages, handle_redis_messages
 import asyncio
 from uuid import UUID
 from models.schema import (
+    GetRoomsResponse,
+    CreateRoomRequest,
+    CreateRoomResponse,
     AddRemoveRoomUserRequest,
     PromoteDemoteRoomUserRequest,
-    TextResponse,
+    DefaultTextResponse,
     GetRoomUsersResponse,
     RoomControlMessage
 )
@@ -51,7 +54,7 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
 
     try:
         user_rooms = await postgres_client.get_user_rooms(user_id)
-        user_channels = [f"room:{r}" for r in user_rooms]
+        user_channels = [f"room:{r.id}" for r in user_rooms]
 
         client_task = asyncio.create_task(handle_client_messages(user_id))
         redis_task = asyncio.create_task(handle_redis_messages(user_id, user_channels))
@@ -71,13 +74,24 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
     finally:
         websocket_manager.disconnect(user_id)
 
-@chat_router.get("/rooms")
+@chat_router.get("/rooms", response_model=GetRoomsResponse)
 async def get_rooms(claims: dict = Depends(verify_token)):
-    pass
+    user_id = claims.get("sub")
+    return GetRoomsResponse(
+        rooms=(await postgres_client.get_user_rooms(user_id))
+    )
 
-@chat_router.post("/rooms")
-async def create_room(claims: dict = Depends(verify_token)):
-    pass
+@chat_router.post("/rooms", response_model=CreateRoomResponse)
+async def create_room(req: CreateRoomRequest = Body(...), claims: dict = Depends(verify_token)):
+    user_id = claims.get("sub")
+    room_id = await postgres_client.create_room(
+        name=req.name,
+        room_type=req.room_type,
+        created_by=user_id,
+        participants=(req.participants or []),
+        description=req.description
+    )
+    return CreateRoomResponse(room_id=room_id)
 
 @chat_router.get("/rooms/{room_id}/users", response_model=GetRoomUsersResponse)
 async def get_room_users(room_id: UUID, claims: dict = Depends(verify_token)):
@@ -90,7 +104,7 @@ async def get_room_users(room_id: UUID, claims: dict = Depends(verify_token)):
     users = await postgres_client.get_room_users(room_id)
     return GetRoomUsersResponse(users=users)
 
-@chat_router.put("/rooms/{room_id}/users", response_model=TextResponse)
+@chat_router.put("/rooms/{room_id}/users", response_model=DefaultTextResponse)
 async def add_room_user(
     room_id: UUID,
     req: AddRemoveRoomUserRequest = Body(...),
@@ -118,9 +132,9 @@ async def add_room_user(
         RoomControlMessage(room_id=room_id, status="added")
     ) # Notify the user that they have been added
 
-    return TextResponse(message=f"User {new_user_id} added to room {room_id}.")
+    return DefaultTextResponse(message=f"User {new_user_id} added to room {room_id}.")
 
-@chat_router.delete("/rooms/{room_id}/users", response_model=TextResponse)
+@chat_router.delete("/rooms/{room_id}/users", response_model=DefaultTextResponse)
 async def remove_room_user(
     room_id: UUID,
     req: AddRemoveRoomUserRequest = Body(...),
@@ -148,9 +162,9 @@ async def remove_room_user(
         RoomControlMessage(room_id=room_id, status="removed")
     ) # Notify the user that they have been removed
 
-    return TextResponse(message=f"User {removed_user_id} removed from room {room_id}.")
+    return DefaultTextResponse(message=f"User {removed_user_id} removed from room {room_id}.")
 
-@chat_router.patch("/rooms/{room_id}/users", response_model=TextResponse)
+@chat_router.patch("/rooms/{room_id}/users", response_model=DefaultTextResponse)
 async def promote_demote(
     room_id: UUID,
     req: PromoteDemoteRoomUserRequest = Body(...),
@@ -186,7 +200,7 @@ async def promote_demote(
                 RoomControlMessage(room_id=room_id, status="promoted")
             ) # Notify the user that they have been promoted
 
-            return TextResponse(message=f"User {uid} promoted in room {room_id}.")
+            return DefaultTextResponse(message=f"User {uid} promoted in room {room_id}.")
 
         case "member":
             if not await postgres_client.is_user_admin(uid, room_id):
@@ -201,7 +215,7 @@ async def promote_demote(
                 RoomControlMessage(room_id=room_id, status="demoted")
             ) # Notify the user that they have been demoted
 
-            return TextResponse(message=f"User {uid} demoted in room {room_id}.")
+            return DefaultTextResponse(message=f"User {uid} demoted in room {room_id}.")
 
         case _:
             # This code block should be unreachable since the role needs to match one of
