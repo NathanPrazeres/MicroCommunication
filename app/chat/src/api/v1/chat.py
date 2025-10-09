@@ -24,6 +24,7 @@ from models.schema import (
     GetRoomUsersResponse,
     RoomControlMessage
 )
+from utils.user_info import get_user_info
 
 
 chat_router = APIRouter(
@@ -101,7 +102,9 @@ async def get_room_users(room_id: UUID, claims: dict = Depends(verify_token)):
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You aren't a member of this room."
         )
-    users = await postgres_client.get_room_users(room_id)
+    user_ids = await postgres_client.get_room_users(room_id)
+    users = await asyncio.gather(*(get_user_info(u) for u in user_ids))
+    # NOTE: the line above creates a list of tasks to be executed asynchronously in parallel
     return GetRoomUsersResponse(users=users)
 
 @chat_router.put("/rooms/{room_id}/users", response_model=DefaultTextResponse)

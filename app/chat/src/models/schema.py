@@ -19,6 +19,11 @@ class MessageResponse(BaseModel):
     message: Optional[MessageDto] = None
     status: Literal["ok"] = "ok"
 
+class UserInfo(BaseModel):
+    id: UUID
+    name: str
+    email: str
+
 ####################
 #     Requests     #
 ####################
@@ -50,7 +55,7 @@ class DefaultTextResponse(BaseModel):
     message: str
 
 class GetRoomUsersResponse(BaseModel):
-    users: list[UUID]
+    users: list[UserInfo]
 
 class GetRoomsResponse(BaseModel):
     rooms: list[RoomDto]

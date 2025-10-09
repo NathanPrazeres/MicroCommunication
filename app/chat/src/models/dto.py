@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from datetime import datetime
 from typing import Optional, Literal
 
+
 class StatusDto(BaseModel):
     status: str
     service: str
