@@ -119,7 +119,7 @@ class PostgresClient:
 
         Returns None when the message can't be sent.
         """
-        if not await self.user_in_room(user_id, room_id):
+        if not await self.is_user_in_room(user_id, room_id):
             return None
 
         async with self.pool.connection() as conn:
@@ -147,7 +147,7 @@ class PostgresClient:
                     deleted_at=msg[8],
                 )
 
-    async def user_in_room(self, user_id: UUID, room_id: UUID) -> bool:
+    async def is_user_in_room(self, user_id: UUID, room_id: UUID) -> bool:
         """
         Checks whether a user is in a given room.
         """
@@ -211,21 +211,32 @@ class PostgresClient:
                     (room_id, user_id)
                 )
 
-    async def is_user_admin(self, user_id: UUID, room_id: UUID) -> bool:
+    async def is_user_admin(self, user_id: UUID, room_id: UUID, owner_only: bool = False) -> bool:
         """
         Checks whether a user is an admin (or owner) in a given room.
         """
         async with self.pool.connection() as conn:
             async with conn.cursor() as curr:
-                await curr.execute(
-                    """
-                    SELECT 1
-                    FROM room_participants
-                    WHERE room_id = %s AND user_id = %s AND (role = 'admin' OR role = 'owner')
-                    LIMIT 1
-                    """,
-                    (room_id, user_id)
-                )
+                if owner_only:
+                    await curr.execute(
+                        """
+                        SELECT 1
+                        FROM room_participants
+                        WHERE room_id = %s AND user_id = %s AND role = 'owner'
+                        LIMIT 1
+                        """,
+                        (room_id, user_id)
+                    )
+                else:
+                    await curr.execute(
+                        """
+                        SELECT 1
+                        FROM room_participants
+                        WHERE room_id = %s AND user_id = %s AND (role = 'admin' OR role = 'owner')
+                        LIMIT 1
+                        """,
+                        (room_id, user_id)
+                    )
                 return (await curr.fetchone()) is not None
 
     async def get_user_rooms(self, user_id: UUID) -> list[RoomDto]:

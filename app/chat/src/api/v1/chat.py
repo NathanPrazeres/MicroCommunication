@@ -97,7 +97,7 @@ async def create_room(req: CreateRoomRequest = Body(...), claims: dict = Depends
 @chat_router.get("/rooms/{room_id}/users", response_model=GetRoomUsersResponse)
 async def get_room_users(room_id: UUID, claims: dict = Depends(verify_token)):
     user_id = claims.get("sub")
-    if not await postgres_client.user_in_room(user_id, room_id):
+    if not await postgres_client.is_user_in_room(user_id, room_id):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You aren't a member of this room."
@@ -123,7 +123,7 @@ async def add_room_user(
             detail="You must provide a user ID to add to the room."
         )
 
-    if await postgres_client.user_in_room(new_user_id, room_id):
+    if await postgres_client.is_user_in_room(new_user_id, room_id):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=f"User {new_user_id} is already a memeber of room {room_id}."
@@ -153,7 +153,7 @@ async def remove_room_user(
             detail="You must provide a user ID to remove from the room."
         )
 
-    if not await postgres_client.user_in_room(removed_user_id, room_id):
+    if not await postgres_client.is_user_in_room(removed_user_id, room_id):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=f"User {removed_user_id} is not a memeber of room {room_id}."
@@ -179,7 +179,6 @@ async def promote_demote(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You must be an admin or owner to promote or demote."
         )
-    # NOTE: with the current logic, an admin can demote the owner
 
     # The body of the request will be: { "user_id": "<uuid>", "role": "admin" | "member" }
     uid = req.user_id
@@ -187,6 +186,11 @@ async def promote_demote(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="You must provide a user ID to promote/demote."
+        )
+    if postgres_client.is_user_admin(user_id=uid, room_id=room_id, owner_only=True):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can't demote the owner."
         )
 
     match req.role:
