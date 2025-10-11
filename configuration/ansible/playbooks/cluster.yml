@@ -10,3 +10,9 @@
   become: true
   roles:
     - worker
+
+- name: Configure GitOps
+  hosts: role_worker
+  become: true
+  roles:
+    - gitops

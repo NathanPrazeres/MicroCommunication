@@ -6,7 +6,6 @@
     name: "{{ kubernetes_packages }}"
     state: "{{ kubernetes_packages_state }}"
   notify: restart kubelet
-  with_items: "{{ kubernetes_packages }}"
 
 - include_tasks: sysctl-setup.yml
 
@@ -21,6 +20,13 @@
     path: /etc/kubernetes/kubelet.conf
   register: worker_joined
 
-- name: Join the node to the cluster
-  command: "{{ hostvars[groups['control_plane'][0]].kubeadm_join_command }}"
+- name: Join node to Kubernetes control plane
+  command: "{{ hostvars[groups['role_master'][0]]['kubeadm_join_command'] }}"
+  when: not worker_joined.stat.exists
+  register: kubeadm_join_result
+
+- name: Print join result
+  debug:
+    var: kubeadm_join_result.stdout
+    verbosity: 2
   when: not worker_joined.stat.exists
