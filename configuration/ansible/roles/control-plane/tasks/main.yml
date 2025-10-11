@@ -6,7 +6,6 @@
     name: "{{ kubernetes_packages }}"
     state: "{{ kubernetes_packages_state }}"
   notify: restart kubelet
-  with_items: "{{ kubernetes_packages }}"
 
 - include_tasks: sysctl-setup.yml
 
@@ -29,10 +28,19 @@
   changed_when: "'token already exists' not in kubeadm_token.stderr"
   run_once: true
 
+- name: Get CA cert hash
+  shell: >
+    openssl x509 -pubkey -in /etc/kubernetes/pki/ca.crt |
+    openssl rsa -pubin -outform der 2>/dev/null |
+    openssl dgst -sha256 -hex | sed 's/^.* //'
+  register: ca_cert_hash
+  run_once: true
+  changed_when: false
+
 - name: Build kubeadm join command
   set_fact:
     kubeadm_join_command: >
       kubeadm join {{ kube_control_plane_endpoint }}:6443
       --token {{ kubeadm_token.stdout }}
-  delegate_to: localhost
+      --discovery-token-ca-cert-hash sha256:{{ ca_cert_hash.stdout }}
   run_once: true
