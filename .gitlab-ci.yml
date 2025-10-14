@@ -27,3 +27,34 @@ yamllint:
   script:
     - yamllint .
   tags: [validation]
+---
+name: Deploy Infrastructure
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'terraform/**'
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+      
+      - name: Port Forward Keycloak
+        run: |
+          kubectl port-forward -n infrastructure svc/keycloak 8080:8080 &
+          sleep 10
+      
+      - name: Terraform Init
+        working-directory: terraform
+        run: terraform init
+      
+      - name: Terraform Apply
+        working-directory: terraform
+        env:
+          TF_VAR_keycloak_admin_password: ${{ secrets.KEYCLOAK_ADMIN_PASSWORD }}
+          TF_VAR_user_service_client_secret: ${{ secrets.USER_SERVICE_CLIENT_SECRET }}
+        run: terraform apply -auto-approve
