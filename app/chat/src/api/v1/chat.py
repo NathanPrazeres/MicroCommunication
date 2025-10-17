@@ -7,11 +7,11 @@ from fastapi import (
     Depends
 )
 from utils.websocket_manager import websocket_manager
-from auth.token import decode_jwt
 from auth.dependencies import verify_token
 from repositories.db_postgres import postgres_client
 from repositories.pubsub_redis import redis_client
 from services.messages import handle_client_messages, handle_redis_messages
+from utils.jwt_manager import jwt_manager
 import asyncio
 from uuid import UUID
 from models.schema import (
@@ -42,7 +42,7 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
     TODO: are we using chat.local or some other domain?
     """
     try:
-        claims = decode_jwt(token)
+        claims = await jwt_manager.decode_token(token)
         user_id = claims.get("sub")
         # TODO: make sure this is necessary and works
         if user_id is None:

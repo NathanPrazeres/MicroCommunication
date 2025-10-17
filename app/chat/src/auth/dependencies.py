@@ -5,25 +5,17 @@ from fastapi import (
     Depends
 )
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from config import JWT_PUB_KEY
-from auth.token import decode_jwt
+from utils.jwt_manager import jwt_manager
 
 
 bearer_scheme = HTTPBearer(auto_error=False)
 
-def verify_token(credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme)):
+async def verify_token(credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme)):
     """
     Dependency to be used by FastAPI endpoints.
 
-    Raises HTTPException if there's no JWT present
-    in the headers or if a server error occurs.
+    Raises HTTPException if there's no valid JWT present in the headers.
     """
-    if JWT_PUB_KEY is None:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Missing JWT key"
-        )
-
     if credentials is None or credentials.scheme != "Bearer":
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -32,7 +24,7 @@ def verify_token(credentials: HTTPAuthorizationCredentials = Depends(bearer_sche
 
     token = credentials.credentials
     try:
-        payload = decode_jwt(token)
+        payload = await jwt_manager.decode_token(token)
         # return all of the claims in case I want to use later
         return payload
     except jwt.exceptions.MissingRequiredClaimError:
