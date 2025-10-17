@@ -1,5 +1,4 @@
 ---
-<<<<<<< HEAD
 - name: Load required kernel modules
   modprobe:
     name: "{{ item }}"
@@ -41,11 +40,3 @@
   sysctl:
     name: net.ipv4.ip_forward
     value: 1
-=======
-# necessary for kubernetes
-- name: Ensure br_netfilter is loaded
-  modprobe:
-    name: br_netfilter
-    state: present
-    persistent: present
->>>>>>> 20b88f2 (feat(configuration): ansible pings VMs, testing Cluster creation soon)

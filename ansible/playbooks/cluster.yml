@@ -1,6 +1,5 @@
 ---
 - name: Configure Kubernetes Control Plane
-<<<<<<< HEAD
   hosts: _master
   become: true
   roles:
