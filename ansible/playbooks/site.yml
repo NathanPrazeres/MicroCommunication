@@ -13,5 +13,5 @@
 
 - name: Configure GitOps
   hosts: _master
-  roles: 
+  roles:
     - gitops
