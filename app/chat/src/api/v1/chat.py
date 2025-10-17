@@ -187,7 +187,7 @@ async def promote_demote(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="You must provide a user ID to promote/demote."
         )
-    if postgres_client.is_user_admin(user_id=uid, room_id=room_id, owner_only=True):
+    if await postgres_client.is_user_admin(user_id=uid, room_id=room_id, owner_only=True):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You can't demote the owner."
