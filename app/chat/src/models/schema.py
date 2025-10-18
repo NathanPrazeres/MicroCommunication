@@ -2,6 +2,7 @@ from pydantic import BaseModel
 from uuid import UUID
 from typing import Optional, Literal
 from models.dto import MessageDto, RoomDto
+from datetime import datetime
 
 
 ##################################
@@ -9,15 +10,10 @@ from models.dto import MessageDto, RoomDto
 ##################################
 class ErrorMessage(BaseModel):
     error: Optional[str] = None
-    status: Literal["error"] = "error"
 
 class RoomControlMessage(BaseModel):
     room_id: UUID
     status: Literal["added", "removed", "promoted", "demoted"]
-
-class SendMessageResponse(BaseModel):
-    message: Optional[MessageDto] = None
-    status: Literal["ok"] = "ok"
 
 class UserInfo(BaseModel):
     id: UUID
@@ -62,3 +58,29 @@ class GetRoomsResponse(BaseModel):
 
 class GetMessagesResponse(BaseModel):
     messages: list[MessageDto]
+
+class SendMessageResponse(BaseModel):
+    message: Optional[MessageDto] = None
+
+###################################
+#     WebSocket Communication     #
+###################################
+class WsMessage(BaseModel):
+    type: Literal["message"] = "message"
+    data: MessageDto
+    ts: Optional[datetime] = None
+
+class WsControl(BaseModel):
+    type: Literal["control"] = "control"
+    data: RoomControlMessage
+    ts: Optional[datetime] = None
+
+class WsSendResponse(BaseModel):
+    type: Literal["send_response"] = "send_response"
+    data: SendMessageResponse
+    ts: Optional[datetime] = None
+
+class WsError(BaseModel):
+    type: Literal["error"] = "error"
+    data: ErrorMessage
+    ts: Optional[datetime] = None

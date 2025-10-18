@@ -4,8 +4,18 @@ from repositories.pubsub_redis import redis_client
 from fastapi import WebSocketDisconnect
 from uuid import UUID
 from pydantic import ValidationError
-from models.schema import SendMessageRequest, SendMessageResponse, RoomControlMessage, ErrorMessage
+from models.schema import (
+    SendMessageRequest,
+    SendMessageResponse,
+    RoomControlMessage,
+    ErrorMessage,
+    WsError,
+    WsSendResponse,
+    WsControl,
+    WsMessage
+)
 from models.dto import MessageDto
+from datetime import datetime
 
 
 async def handle_client_messages(user_id: UUID):
@@ -18,7 +28,10 @@ async def handle_client_messages(user_id: UUID):
             except ValidationError:
                 await websocket_manager.send(
                     user_id,
-                    ErrorMessage(error="Invalid message payload.")
+                    WsError(
+                        data=ErrorMessage(error="Invalid message payload."),
+                        ts=datetime.now()
+                    )
                 )
                 continue
 
@@ -26,7 +39,10 @@ async def handle_client_messages(user_id: UUID):
             if message is None:
                 await websocket_manager.send(
                     user_id,
-                    ErrorMessage(error="Unauthorized message request.")
+                    WsError(
+                        data=ErrorMessage(error="Unauthorized message request."),
+                        ts=datetime.now()
+                    )
                 )
                 continue
 
@@ -36,7 +52,10 @@ async def handle_client_messages(user_id: UUID):
             # Send confirmation back to frontend
             await websocket_manager.send(
                 user_id,
-                SendMessageResponse(message=message)
+                WsSendResponse(
+                    data=SendMessageResponse(message=message),
+                    ts=datetime.now()
+                )
             )
 
     except WebSocketDisconnect:
@@ -70,17 +89,23 @@ async def handle_redis_messages(user_id: UUID, room_channels: list[str]):
                     # Notify user
                     await websocket_manager.send(
                         user_id,
-                        control.model_dump()
+                        WsControl(data=control, ts=datetime.now())
                     )
                 else:
                     # Forward message to this user's WebSocket
                     msg = MessageDto.model_validate_json(data)
                     if msg.sender_id != user_id:
-                        await websocket_manager.send(user_id, msg)
+                        await websocket_manager.send(
+                            user_id,
+                            WsMessage(data=msg, ts=datetime.now())
+                        )
             except ValidationError:
                 await websocket_manager.send(
                     user_id,
-                    ErrorMessage(error=f"Error parsing JSON: {data}")
+                    WsError(
+                        data=ErrorMessage(error=f"Error parsing JSON: {data}"),
+                        ts=datetime.now()
+                    )
                 )
     finally:
         await pubsub.unsubscribe(*channels)

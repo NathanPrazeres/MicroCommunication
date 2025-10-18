@@ -24,6 +24,7 @@ from models.schema import (
     GetRoomUsersResponse,
     RoomControlMessage,
     SendMessageRequest,
+    SendMessageResponse,
     GetMessagesResponse
 )
 from utils.user_info import get_user_info
@@ -107,7 +108,7 @@ async def get_room_messages(room_id: UUID, claims: dict = Depends(verify_token))
 
     return GetMessagesResponse(messages=messages)
 
-@chat_router.post("/rooms/{room_id}/messages", response_model=DefaultTextResponse)
+@chat_router.post("/rooms/{room_id}/messages", response_model=SendMessageResponse)
 async def send_room_message(room_id: UUID, req: SendMessageRequest = Body(...), claims: dict = Depends(verify_token)):
     """
     NOTE: this endpoint should NOT be used when using realime communication
@@ -137,7 +138,7 @@ async def send_room_message(room_id: UUID, req: SendMessageRequest = Body(...), 
 
     await redis_client.publish(f"room:{req.room_id}", message.model_dump_json())
 
-    return DefaultTextResponse(message=f"Message sent to room {req.room_id}.")
+    return SendMessageResponse(message=message)
 
 @chat_router.get("/rooms/{room_id}/users", response_model=GetRoomUsersResponse)
 async def get_room_users(room_id: UUID, claims: dict = Depends(verify_token)):

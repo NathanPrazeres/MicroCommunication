@@ -15,10 +15,10 @@ class MessageDto(BaseModel):
     sender_id: UUID
     content: str
     message_type: str
-    reply_to_id: UUID
+    reply_to_id: Optional[UUID] = None
     created_at: datetime
-    updated_at: datetime
-    deleted_at: datetime
+    updated_at: Optional[datetime] = None
+    deleted_at: Optional[datetime] = None
 
 class UserDto(BaseModel):
     id: UUID
@@ -31,4 +31,4 @@ class RoomDto(BaseModel):
     room_type: Literal["direct", "group", "channel"]
     created_by: UUID
     created_at: datetime
-    updated_at: datetime
+    updated_at: Optional[datetime]
