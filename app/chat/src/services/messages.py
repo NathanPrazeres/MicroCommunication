@@ -21,42 +21,53 @@ from datetime import datetime
 async def handle_client_messages(user_id: UUID):
     try:
         while True:
-            data = await websocket_manager.get(user_id).receive_json()
-            # data = {"room_id": 123, "content": "Lorem Ipsum", "reply_to_id": null}
-            try:
-                msg_req = SendMessageRequest(**data)
-            except ValidationError:
+            payload = await websocket_manager.get(user_id).receive_json()
+            # payload = { type: "send_message", data: { "room_id": 123, "content": "Lorem Ipsum", "reply_to_id": null } }
+            type = payload.type
+            if type == "send_message":
+                data = payload.data
+                try:
+                    msg_req = SendMessageRequest(**data)
+                except ValidationError:
+                    await websocket_manager.send(
+                        user_id,
+                        WsError(
+                            data=ErrorMessage(error="Invalid message payload."),
+                            ts=datetime.now()
+                        )
+                    )
+                    continue
+
+                message = await postgres_client.send_message(user_id, msg_req.room_id, msg_req.content)
+                if message is None:
+                    await websocket_manager.send(
+                        user_id,
+                        WsError(
+                            data=ErrorMessage(error="Unauthorized message request."),
+                            ts=datetime.now()
+                        )
+                    )
+                    continue
+
+                # Publish to Redis so all other users in the room get it
+                await redis_client.publish(f"room:{msg_req.room_id}", message.model_dump_json())
+
+                # Send confirmation back to frontend
                 await websocket_manager.send(
                     user_id,
-                    WsError(
-                        data=ErrorMessage(error="Invalid message payload."),
+                    WsSendResponse(
+                        data=SendMessageResponse(message=message),
                         ts=datetime.now()
                     )
                 )
-                continue
-
-            message = await postgres_client.send_message(user_id, msg_req.room_id, msg_req.content)
-            if message is None:
+            else:
                 await websocket_manager.send(
-                    user_id,
-                    WsError(
-                        data=ErrorMessage(error="Unauthorized message request."),
-                        ts=datetime.now()
+                        user_id,
+                        WsError(
+                            data=ErrorMessage(error="Malformed request."),
+                            ts=datetime.now()
+                        )
                     )
-                )
-                continue
-
-            # Publish to Redis so all other users in the room get it
-            await redis_client.publish(f"room:{msg_req.room_id}", message.model_dump_json())
-
-            # Send confirmation back to frontend
-            await websocket_manager.send(
-                user_id,
-                WsSendResponse(
-                    data=SendMessageResponse(message=message),
-                    ts=datetime.now()
-                )
-            )
 
     except WebSocketDisconnect:
         await websocket_manager.disconnect(user_id)
