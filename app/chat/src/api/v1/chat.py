@@ -39,9 +39,7 @@ chat_router = APIRouter(
 async def websocket_endpoint(websocket: WebSocket, token: str):
     """
     Websockets are going to be created by connecting to
-    wss://chat.local/ws?token=${token}
-
-    TODO: are we using chat.local or some other domain?
+    ws://CHAT_SERVICE:CHAT_PORT/ws?token=${token}
     """
     try:
         claims = await jwt_manager.decode_token(token)
