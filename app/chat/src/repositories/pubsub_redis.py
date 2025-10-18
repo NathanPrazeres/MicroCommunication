@@ -1,8 +1,15 @@
+import config
 import redis.asyncio as redis
 
-# TODO: review host
+
+def _redis_port() -> int:
+    try:
+        return int(config.REDIS_PORT)
+    except (TypeError, ValueError):
+        return 6379
+
 redis_client = redis.Redis(
-    host="redis.local",
-    port=6379,
+    host=config.REDIS_HOST,
+    port=_redis_port(),
     decode_responses=True
 )
