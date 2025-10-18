@@ -132,7 +132,10 @@ async def send_room_message(room_id: UUID, req: SendMessageRequest = Body(...), 
 
     message = await postgres_client.send_message(user_id, req.room_id, req.content, req.reply_to_id)
     if message is None:
-        return
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Message couldn't be sent."
+        )
 
     await redis_client.publish(f"room:{req.room_id}", message.model_dump_json())
 

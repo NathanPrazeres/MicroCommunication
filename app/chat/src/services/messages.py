@@ -13,7 +13,14 @@ async def handle_client_messages(user_id: UUID):
         while True:
             data = await websocket_manager.get(user_id).receive_json()
             # data = {"room_id": 123, "content": "Lorem Ipsum", "reply_to_id": null}
-            msg_req = SendMessageRequest(**data)
+            try:
+                msg_req = SendMessageRequest(**data)
+            except ValidationError:
+                await websocket_manager.send(
+                    user_id,
+                    ErrorMessage(error="Invalid message payload.")
+                )
+                continue
 
             message = await postgres_client.send_message(user_id, msg_req.room_id, msg_req.content)
             if message is None:
@@ -29,7 +36,7 @@ async def handle_client_messages(user_id: UUID):
             # Send confirmation back to frontend
             await websocket_manager.send(
                 user_id,
-                SendMessageResponse(message=message).model_dump()
+                SendMessageResponse(message=message)
             )
 
     except WebSocketDisconnect:
@@ -43,26 +50,28 @@ async def handle_redis_messages(user_id: UUID, room_channels: list[str]):
 
     try:
         async for message in pubsub.listen():
+            if message['type'] != "message":
+                continue
             channel = message['channel']
             data = message['data']
             try:
                 if channel == user_channel:
                     # This is a control message for the user
-                        control = RoomControlMessage.model_validate_json(data)
-                        room_id = control.room_id
-                        status = control.status
+                    control = RoomControlMessage.model_validate_json(data)
+                    room_id = control.room_id
+                    status = control.status
 
-                        if status == "added":
-                            # Subscribe to the new room channel
-                            await pubsub.subscribe(f"room:{room_id}")
-                        elif status == "removed":
-                            await pubsub.unsubscribe(f"room:{room_id}")
+                    if status == "added":
+                        # Subscribe to the new room channel
+                        await pubsub.subscribe(f"room:{room_id}")
+                    elif status == "removed":
+                        await pubsub.unsubscribe(f"room:{room_id}")
 
-                        # Notify user
-                        await websocket_manager.send(
-                            user_id,
-                            control.model_dump()
-                        )
+                    # Notify user
+                    await websocket_manager.send(
+                        user_id,
+                        control.model_dump()
+                    )
                 else:
                     # Forward message to this user's WebSocket
                     msg = MessageDto.model_validate_json(data)
