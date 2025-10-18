@@ -29,11 +29,11 @@ async def handle_client_messages(user_id: UUID):
             # Send confirmation back to frontend
             await websocket_manager.send(
                 user_id,
-                SendMessageResponse(message=message)
+                SendMessageResponse(message=message).model_dump()
             )
 
     except WebSocketDisconnect:
-        websocket_manager.disconnect(user_id)
+        await websocket_manager.disconnect(user_id)
 
 async def handle_redis_messages(user_id: UUID, room_channels: list[str]):
     pubsub = redis_client.pubsub()
@@ -61,7 +61,7 @@ async def handle_redis_messages(user_id: UUID, room_channels: list[str]):
                         # Notify user
                         await websocket_manager.send(
                             user_id,
-                            control
+                            control.model_dump()
                         )
                 else:
                     # Forward message to this user's WebSocket

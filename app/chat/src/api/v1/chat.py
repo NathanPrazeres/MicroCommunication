@@ -73,7 +73,7 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
                 pass
 
     finally:
-        websocket_manager.disconnect(user_id)
+        await websocket_manager.disconnect(user_id)
 
 @chat_router.get("/rooms", response_model=GetRoomsResponse)
 async def get_rooms(claims: dict = Depends(verify_token)):
