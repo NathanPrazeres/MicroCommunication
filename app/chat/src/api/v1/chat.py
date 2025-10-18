@@ -32,8 +32,7 @@ from utils.user_info import get_user_info
 
 chat_router = APIRouter(
     prefix="/api/v1",
-    tags=["chat"],
-    dependencies=[Depends(verify_token)]
+    tags=["chat"]
 )
 
 @chat_router.websocket("/ws")

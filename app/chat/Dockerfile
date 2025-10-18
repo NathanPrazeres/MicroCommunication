@@ -33,6 +33,7 @@ RUN groupadd -r appuser && useradd -r -g appuser appuser
 
 # Install only runtime dependencies
 RUN apt-get update && apt-get install -y \
+    libpq5 \
     curl \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
@@ -48,7 +49,7 @@ COPY --chown=appuser:appuser pyproject.toml ./
 
 # Make sure we use venv
 ENV PATH="/app/.venv/bin:$PATH" \
-    PYTHONPATH="/app/src:$PYTHONPATH" \
+    PYTHONPATH="/app/src" \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1
 
