@@ -183,7 +183,7 @@ async def add_room_user(
     await postgres_client.add_room_user(new_user_id, room_id)
     await redis_client.publish(
         f"user:{new_user_id}",
-        RoomControlMessage(room_id=room_id, status="added")
+        RoomControlMessage(room_id=room_id, status="added").model_dump_json()
     ) # Notify the user that they have been added
 
     return DefaultTextResponse(message=f"User {new_user_id} added to room {room_id}.")
@@ -213,7 +213,7 @@ async def remove_room_user(
     await postgres_client.remove_room_user(removed_user_id, room_id)
     await redis_client.publish(
         f"user:{removed_user_id}",
-        RoomControlMessage(room_id=room_id, status="removed")
+        RoomControlMessage(room_id=room_id, status="removed").model_dump_json()
     ) # Notify the user that they have been removed
 
     return DefaultTextResponse(message=f"User {removed_user_id} removed from room {room_id}.")
@@ -255,7 +255,7 @@ async def promote_demote(
             await postgres_client.promote_room_user(uid, room_id)
             await redis_client.publish(
                 f"user:{uid}",
-                RoomControlMessage(room_id=room_id, status="promoted")
+                RoomControlMessage(room_id=room_id, status="promoted").model_dump_json()
             ) # Notify the user that they have been promoted
 
             return DefaultTextResponse(message=f"User {uid} promoted in room {room_id}.")
@@ -270,7 +270,7 @@ async def promote_demote(
             await postgres_client.demote_room_user(uid, room_id)
             await redis_client.publish(
                 f"user:{uid}",
-                RoomControlMessage(room_id=room_id, status="demoted")
+                RoomControlMessage(room_id=room_id, status="demoted").model_dump_json()
             ) # Notify the user that they have been demoted
 
             return DefaultTextResponse(message=f"User {uid} demoted in room {room_id}.")
