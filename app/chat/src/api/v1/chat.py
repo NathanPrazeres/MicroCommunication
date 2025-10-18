@@ -22,7 +22,9 @@ from models.schema import (
     PromoteDemoteRoomUserRequest,
     DefaultTextResponse,
     GetRoomUsersResponse,
-    RoomControlMessage
+    RoomControlMessage,
+    SendMessageRequest,
+    GetMessagesResponse
 )
 from utils.user_info import get_user_info
 
@@ -94,6 +96,48 @@ async def create_room(req: CreateRoomRequest = Body(...), claims: dict = Depends
     )
     return CreateRoomResponse(room_id=room_id)
 
+@chat_router.get("/rooms/{room_id}/messages", response_model=GetMessagesResponse)
+async def get_room_messages(room_id: UUID, claims: dict = Depends(verify_token)):
+    user_id = claims.get("sub")
+
+    messages = await postgres_client.get_room_messages(user_id, room_id)
+    if messages is None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You aren't a member of this room."
+        )
+
+    return GetMessagesResponse(messages=messages)
+
+@chat_router.post("/rooms/{room_id}/messages", response_model=DefaultTextResponse)
+async def send_room_message(room_id: UUID, req: SendMessageRequest = Body(...), claims: dict = Depends(verify_token)):
+    """
+    NOTE: this endpoint should NOT be used when using realime communication
+    through WebSockets and should only serve as a backup as the last resort.
+    """
+    user_id = claims.get("sub")
+    if not await postgres_client.is_user_in_room(user_id, room_id):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You aren't a member of this room."
+        )
+
+    # Yes, I know that it's odd to have two room IDs but
+    # this endpoint isn't meant to be used anyways.
+    if room_id != req.room_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Room IDs don't match."
+        )
+
+    message = await postgres_client.send_message(user_id, req.room_id, req.content, req.reply_to_id)
+    if message is None:
+        return
+
+    await redis_client.publish(f"room:{req.room_id}", message.model_dump_json())
+
+    return DefaultTextResponse(message=f"Message sent to room {req.room_id}.")
+
 @chat_router.get("/rooms/{room_id}/users", response_model=GetRoomUsersResponse)
 async def get_room_users(room_id: UUID, claims: dict = Depends(verify_token)):
     user_id = claims.get("sub")
@@ -103,7 +147,8 @@ async def get_room_users(room_id: UUID, claims: dict = Depends(verify_token)):
             detail="You aren't a member of this room."
         )
     user_ids = await postgres_client.get_room_users(room_id)
-    users = await asyncio.gather(*(get_user_info(u) for u in user_ids))
+    results = await asyncio.gather(*(get_user_info(u) for u in user_ids))
+    users = [user_info for user_info in results if user_info is not None]
     # NOTE: the line above creates a list of tasks to be executed asynchronously in parallel
     return GetRoomUsersResponse(users=users)
 
@@ -121,6 +166,12 @@ async def add_room_user(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="You must provide a user ID to add to the room."
+        )
+
+    if await get_user_info(new_user_id) is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="User doesn't exist."
         )
 
     if await postgres_client.is_user_in_room(new_user_id, room_id):

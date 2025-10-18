@@ -23,18 +23,6 @@ class PostgresClient:
         """Close the pool when FastAPI shuts down"""
         await self.pool.close()
 
-    async def is_valid_user(self, user_id: UUID) -> bool:
-        """
-        Checks whether a user_id exists in the users table.
-        """
-        async with self.pool.connection() as conn:
-            async with conn.cursor() as curr:
-                await curr.execute(
-                    "SELECT 1 FROM users WHERE id = %s LIMIT 1",
-                    (user_id,)
-                )
-                return (await curr.fetchone()) is not None
-
     async def get_room_users(self, room_id: UUID) -> list[UUID]:
         """
         Fetches users in a room and returns their user IDs.
@@ -113,7 +101,44 @@ class PostgresClient:
 
         return room_id
 
-    async def send_message(self, user_id: UUID, room_id: UUID, content: str) -> Optional[MessageDto]:
+    async def get_room_messages(self, user_id: UUID, room_id: UUID) -> Optional[list[MessageDto]]:
+        """
+        Returns a list of all past messages from a room.
+
+        Returns None if the user isn't in the room.
+        """
+        if not await self.is_user_in_room(user_id, room_id):
+            return None
+
+        async with self.pool.connection() as conn:
+            async with conn.cursor() as curr:
+                await curr.execute(
+                    """
+                    SELECT id, room_id, sender_id, content, message_type, reply_to_id, created_at, updated_at, deleted_at
+                    FROM messages
+                    WHERE room_id = %s
+                    ORDER BY created_at ASC
+                    """,
+                    (room_id,)
+                )
+                rows = await curr.fetchall()
+
+        return [
+            MessageDto(
+                id=row[0],
+                room_id=row[1],
+                sender_id=row[2],
+                content=row[3],
+                message_type=row[4],
+                reply_to_id=row[5],
+                created_at=row[6],
+                updated_at=row[7],
+                deleted_at=row[8],
+            )
+            for row in rows
+        ]
+
+    async def send_message(self, user_id: UUID, room_id: UUID, content: str, reply_to_id: Optional[UUID]) -> Optional[MessageDto]:
         """
         Creates a message entry in the database and returns the message.
 
@@ -126,11 +151,11 @@ class PostgresClient:
             async with conn.cursor() as curr:
                 await curr.execute(
                     """
-                    INSERT INTO messages (room_id, sender_id, content)
-                    VALUES (%s, %s, %s)
-                    RETURNING (id, room_id, sender_id, content, message_type, reply_to_id, created_at, updated_at, deleted_at)
+                    INSERT INTO messages (room_id, sender_id, content, reply_to_id)
+                    VALUES (%s, %s, %s, %s)
+                    RETURNING id, room_id, sender_id, content, message_type, reply_to_id, created_at, updated_at, deleted_at
                     """,
-                    (room_id, user_id, content)
+                    (room_id, user_id, content, reply_to_id)
                 )
                 msg = await curr.fetchone()
                 if msg is None:
@@ -168,9 +193,6 @@ class PostgresClient:
         """
         Add a user to the room.
         """
-        if not self.is_valid_user(user_id):
-            return None
-
         async with self.pool.connection() as conn:
             async with conn.cursor() as curr:
                 await curr.execute(
