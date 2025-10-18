@@ -9,7 +9,7 @@ class PostgresClient:
     def __init__(self):
         # TODO: make sure the conninfo and host is correct
         self.pool = AsyncConnectionPool(
-            f"host=db.local port=5432 dbname={config.PG_NAME} user={config.PG_USER} password={config.PG_PASS}",
+            f"host={config.PG_HOST} port={config.PG_PORT} dbname={config.PG_NAME} user={config.PG_USER} password={config.PG_PASS}",
             min_size=1,
             max_size=10,
             max_idle=300 # idle timeout in seconds
