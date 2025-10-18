@@ -15,7 +15,7 @@ class RoomControlMessage(BaseModel):
     room_id: UUID
     status: Literal["added", "removed", "promoted", "demoted"]
 
-class MessageResponse(BaseModel):
+class SendMessageResponse(BaseModel):
     message: Optional[MessageDto] = None
     status: Literal["ok"] = "ok"
 
@@ -40,7 +40,7 @@ class PromoteDemoteRoomUserRequest(BaseModel):
     user_id: UUID
     role: Literal["member", "admin"]
 
-class MessageRequest(BaseModel):
+class SendMessageRequest(BaseModel):
     room_id: UUID
     content: str
     reply_to_id: Optional[UUID] = None
@@ -59,3 +59,6 @@ class GetRoomUsersResponse(BaseModel):
 
 class GetRoomsResponse(BaseModel):
     rooms: list[RoomDto]
+
+class GetMessagesResponse(BaseModel):
+    messages: list[MessageDto]

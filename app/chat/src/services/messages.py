@@ -4,7 +4,7 @@ from repositories.pubsub_redis import redis_client
 from fastapi import WebSocketDisconnect
 from uuid import UUID
 from pydantic import ValidationError
-from models.schema import MessageRequest, MessageResponse, RoomControlMessage, ErrorMessage
+from models.schema import SendMessageRequest, SendMessageResponse, RoomControlMessage, ErrorMessage
 from models.dto import MessageDto
 
 
@@ -13,7 +13,7 @@ async def handle_client_messages(user_id: UUID):
         while True:
             data = await websocket_manager.get(user_id).receive_json()
             # data = {"room_id": 123, "content": "Lorem Ipsum", "reply_to_id": null}
-            msg_req = MessageRequest(**data)
+            msg_req = SendMessageRequest(**data)
 
             message = await postgres_client.send_message(user_id, msg_req.room_id, msg_req.content)
             if message is None:
@@ -29,7 +29,7 @@ async def handle_client_messages(user_id: UUID):
             # Send confirmation back to frontend
             await websocket_manager.send(
                 user_id,
-                MessageResponse(message=message)
+                SendMessageResponse(message=message)
             )
 
     except WebSocketDisconnect:
