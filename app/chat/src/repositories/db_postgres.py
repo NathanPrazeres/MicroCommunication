@@ -7,26 +7,31 @@ from models.dto import MessageDto, UserDto, RoomDto
 
 class PostgresClient:
     def __init__(self):
-        # TODO: make sure the conninfo and host is correct
+        self.pool: Optional[AsyncConnectionPool] = None
+
+    async def open(self):
+        """Open the pool when FastAPI starts"""
         self.pool = AsyncConnectionPool(
             f"host={config.PG_HOST} port={config.PG_PORT} dbname={config.PG_NAME} user={config.PG_USER} password={config.PG_PASS}",
             min_size=1,
             max_size=10,
-            max_idle=300 # idle timeout in seconds
+            max_idle=300, # idle timeout in seconds
+            open=False
         )
-
-    async def open(self):
-        """Open the pool when FastAPI starts"""
         await self.pool.open(wait=True)
 
     async def close(self):
         """Close the pool when FastAPI shuts down"""
+        if not self.pool:
+            return
         await self.pool.close()
 
     async def get_room_users(self, room_id: UUID) -> list[UUID]:
         """
         Fetches users in a room and returns their user IDs.
         """
+        if not self.pool:
+            await self.open()
         async with self.pool.connection() as conn:
             async with conn.cursor() as curr:
                 await curr.execute(
@@ -35,23 +40,6 @@ class PostgresClient:
                 )
                 users = await curr.fetchall()
         return [u[0] for u in users]
-
-    async def get_contacts(self, user_id: UUID) -> list[UserDto]:
-        """
-        Fetches contacts of a user and returns their user IDs and names.
-        """
-        async with self.pool.connection() as conn:
-            async with conn.cursor() as curr:
-                await curr.execute(
-                    "SELECT contact_id, nickname FROM contacts WHERE user_id = %s",
-                    (user_id,)
-                )
-                rows = await curr.fetchall()
-
-        return [
-            UserDto(id=row[0], username=row[1])
-            for row in rows
-        ]
 
     async def create_room(
         self,
