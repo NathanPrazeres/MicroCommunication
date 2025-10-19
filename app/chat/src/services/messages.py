@@ -105,7 +105,7 @@ async def handle_redis_messages(user_id: UUID, room_channels: list[str]):
                 else:
                     # Forward message to this user's WebSocket
                     msg = MessageDto.model_validate_json(data)
-                    if msg.sender_id != user_id:
+                    if str(msg.sender_id) != str(user_id):
                         await websocket_manager.send(
                             user_id,
                             WsMessage(data=msg, ts=datetime.now())

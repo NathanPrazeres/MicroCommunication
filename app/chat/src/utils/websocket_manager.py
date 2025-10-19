@@ -33,7 +33,7 @@ class WebSocketManager:
         try:
             # If it's a Pydantic model, convert to json
             if isinstance(message, BaseModel):
-                await ws.send_json(message.model_dump())
+                await ws.send_json(message.model_dump(mode="json"))
             elif isinstance(message, str):
                 await ws.send_text(message)
             else:
