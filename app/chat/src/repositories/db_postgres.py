@@ -126,7 +126,7 @@ class PostgresClient:
             for row in rows
         ]
 
-    async def send_message(self, user_id: UUID, room_id: UUID, content: str, reply_to_id: Optional[UUID]) -> Optional[MessageDto]:
+    async def send_message(self, user_id: UUID, room_id: UUID, content: str, reply_to_id: Optional[UUID] = None) -> Optional[MessageDto]:
         """
         Creates a message entry in the database and returns the message.
 

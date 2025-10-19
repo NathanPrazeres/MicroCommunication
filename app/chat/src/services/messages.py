@@ -38,7 +38,7 @@ async def handle_client_messages(user_id: UUID):
                     )
                     continue
 
-                message = await postgres_client.send_message(user_id, msg_req.room_id, msg_req.content)
+                message = await postgres_client.send_message(user_id, msg_req.room_id, msg_req.content, msg_req.reply_to_id)
                 if message is None:
                     await websocket_manager.send(
                         user_id,
