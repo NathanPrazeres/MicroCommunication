@@ -2,7 +2,7 @@ from uuid import UUID
 from psycopg_pool import AsyncConnectionPool
 from typing import Optional
 import config
-from models.dto import MessageDto, UserDto, RoomDto
+from models.dto import MessageDto, RoomDto
 
 
 class PostgresClient:
@@ -257,7 +257,7 @@ class PostgresClient:
             async with conn.cursor() as curr:
                 await curr.execute(
                     """
-                    SELECT r.id, r.name, r.description, r.room_type, r.created_by, r.created_at, r.updated_at
+                    SELECT r.id, r.name, r.description, r.room_type, r.created_by, r.created_at, r.updated_at, rp.last_read_at
                     FROM rooms r
                     JOIN room_participants rp ON r.id = rp.room_id
                     WHERE rp.user_id = %s
@@ -274,8 +274,27 @@ class PostgresClient:
                 created_by=row[4],
                 created_at=row[5],
                 updated_at=row[6],
+                last_read_at=row[7],
             )
             for row in rows
         ]
+
+    async def mark_as_read(self, user_id: UUID, room_id: UUID) -> None:
+        """
+        Updates the last_read_at timestamp.
+        """
+        if not await self.is_user_in_room(user_id, room_id):
+            return
+
+        async with self.pool.connection() as conn:
+            async with conn.cursor() as curr:
+                await curr.execute(
+                    """
+                    UPDATE room_participants
+                    SET last_read_at = NOW()
+                    WHERE room_id = %s AND user_id = %s
+                    """,
+                    (room_id, user_id)
+                )
 
 postgres_client = PostgresClient()

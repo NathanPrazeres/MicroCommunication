@@ -32,3 +32,4 @@ class RoomDto(BaseModel):
     created_by: UUID
     created_at: datetime
     updated_at: Optional[datetime]
+    last_read_at: Optional[datetime]
