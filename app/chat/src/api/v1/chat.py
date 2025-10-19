@@ -85,6 +85,12 @@ async def get_rooms(claims: dict = Depends(verify_token)):
 @chat_router.post("/rooms", response_model=CreateRoomResponse)
 async def create_room(req: CreateRoomRequest = Body(...), claims: dict = Depends(verify_token)):
     user_id = claims.get("sub")
+    if not user_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Unauthenticated access is forbidden."
+        )
+
     room_id = await postgres_client.create_room(
         name=req.name,
         room_type=req.room_type,
@@ -92,6 +98,10 @@ async def create_room(req: CreateRoomRequest = Body(...), claims: dict = Depends
         participants=(req.participants or []),
         description=req.description
     )
+
+    for uid in req.participants:
+        await redis_client.publish(f"user:{uid}", RoomControlMessage(room_id=room_id, status="added").model_dump_json())
+
     return CreateRoomResponse(room_id=room_id)
 
 @chat_router.get("/rooms/{room_id}/messages", response_model=GetMessagesResponse)
