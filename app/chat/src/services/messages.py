@@ -23,9 +23,9 @@ async def handle_client_messages(user_id: UUID):
         while True:
             payload = await websocket_manager.get(user_id).receive_json()
             # payload = { type: "send_message", data: { "room_id": 123, "content": "Lorem Ipsum", "reply_to_id": null } }
-            type = payload.type
+            type = payload.get("type")
             if type == "send_message":
-                data = payload.data
+                data = payload.get("data")
                 try:
                     msg_req = SendMessageRequest(**data)
                 except ValidationError:
