@@ -149,6 +149,12 @@ async def send_room_message(room_id: UUID, req: SendMessageRequest = Body(...), 
 
     return SendMessageResponse(message=message)
 
+@chat_router.patch("/rooms/{room_id}/messages", response_model=DefaultTextResponse)
+async def mark_room_as_read(room_id: UUID, claims: dict = Depends(verify_token)):
+    user_id = claims.get("sub")
+    await postgres_client.mark_as_read(user_id, room_id)
+    return DefaultTextResponse(message=f"Room {room_id} marked as read.")
+
 @chat_router.get("/rooms/{room_id}/users", response_model=GetRoomUsersResponse)
 async def get_room_users(room_id: UUID, claims: dict = Depends(verify_token)):
     user_id = claims.get("sub")
