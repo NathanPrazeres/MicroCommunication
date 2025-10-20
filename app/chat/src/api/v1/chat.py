@@ -183,8 +183,8 @@ async def get_room_users(room_id: UUID, claims: dict = Depends(verify_token)):
         )
     user_ids = await postgres_client.get_room_users(room_id)
     results = await asyncio.gather(*(get_user_info(u) for u in user_ids))
+    # NOTE: the line above creates a list of tasks to be executed asynchronously (in parallel)
     users = [user_info for user_info in results if user_info is not None]
-    # NOTE: the line above creates a list of tasks to be executed asynchronously in parallel
     return GetRoomUsersResponse(users=users)
 
 @chat_router.put("/rooms/{room_id}/users", response_model=DefaultTextResponse)
@@ -194,7 +194,11 @@ async def add_room_user(
     claims: dict = Depends(verify_token)
 ):
     user_id = claims.get("sub")
-    # TODO: verify that the user doing the adding is an admin
+    if not postgres_client.is_user_admin(user_id, room_id):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You must be an admin in the room to add a user."
+        )
     # The new user ID is sent in the request body as JSON: { "user_id": "<uuid>" }
     new_user_id = req.user_id
     if not new_user_id:
@@ -230,13 +234,22 @@ async def remove_room_user(
     claims: dict = Depends(verify_token)
 ):
     user_id = claims.get("sub")
-    # TODO: verify that the user doing the removing is an admin
+    if not postgres_client.is_user_admin(user_id, room_id):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You must be an admin in the room to remove a user."
+        )
     # The removed user ID is sent in the request body as JSON: { "user_id": "<uuid>" }
     removed_user_id = req.user_id
     if not removed_user_id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="You must provide a user ID to remove from the room."
+        )
+    if await postgres_client.is_user_admin(user_id=removed_user_id, room_id=room_id, owner_only=True):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can't remove the owner."
         )
 
     if not await postgres_client.is_user_in_room(removed_user_id, room_id):
