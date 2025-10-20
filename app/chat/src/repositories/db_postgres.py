@@ -78,7 +78,7 @@ class PostgresClient:
 
                 # Insert other participants as members
                 for user_id in participants:
-                    if user_id == created_by or not get_user_info(user_id):
+                    if user_id == created_by or not await get_user_info(user_id):
                         continue # Ignore invalid users
                     await curr.execute(
                         """
