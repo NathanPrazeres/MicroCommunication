@@ -281,10 +281,10 @@ async def promote_demote(
 
     # The body of the request will be: { "user_id": "<uuid>", "role": "admin" | "member" }
     uid = req.user_id
-    if not uid:
+    if not await postgres_client.is_user_in_room(user_id=uid, room_id=room_id):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="You must provide a user ID to promote/demote."
+            detail="You must provide the user ID of a user in the room to promote/demote."
         )
     if await postgres_client.is_user_admin(user_id=uid, room_id=room_id, owner_only=True):
         raise HTTPException(
