@@ -56,6 +56,9 @@ class GetRoomUsersResponse(BaseModel):
 class GetRoomsResponse(BaseModel):
     rooms: list[RoomDto]
 
+class GetRoomInfoResponse(BaseModel):
+    room: RoomDto
+
 class GetMessagesResponse(BaseModel):
     messages: list[MessageDto]
 

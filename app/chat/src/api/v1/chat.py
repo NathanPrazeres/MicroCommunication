@@ -25,9 +25,9 @@ from models.schema import (
     RoomControlMessage,
     SendMessageRequest,
     SendMessageResponse,
-    GetMessagesResponse
+    GetMessagesResponse,
+    GetRoomInfoResponse
 )
-from models.dto import RoomDto
 from utils.user_info import get_user_info
 
 
@@ -123,8 +123,8 @@ async def get_room_messages(room_id: UUID, claims: dict = Depends(verify_token))
 
     return GetMessagesResponse(messages=messages)
 
-@chat_router.get("/rooms/{room_id}", response_model=RoomDto)
-async def get_rooms(room_id: UUID, claims: dict = Depends(verify_token)):
+@chat_router.get("/rooms/{room_id}", response_model=GetRoomInfoResponse)
+async def get_room_info(room_id: UUID, claims: dict = Depends(verify_token)):
     user_id = claims.get("sub")
     room_info = await postgres_client.get_room_info(user_id, room_id)
     if not room_info:
@@ -133,7 +133,7 @@ async def get_rooms(room_id: UUID, claims: dict = Depends(verify_token)):
             detail="You aren't a member of this room."
         )
 
-    return room_info
+    return GetRoomInfoResponse(room=room_info)
 
 @chat_router.post("/rooms/{room_id}/messages", response_model=SendMessageResponse)
 async def send_room_message(room_id: UUID, req: SendMessageRequest = Body(...), claims: dict = Depends(verify_token)):
