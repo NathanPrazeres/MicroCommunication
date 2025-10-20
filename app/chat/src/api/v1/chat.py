@@ -27,6 +27,7 @@ from models.schema import (
     SendMessageResponse,
     GetMessagesResponse
 )
+from models.dto import RoomDto
 from utils.user_info import get_user_info
 
 
@@ -107,6 +108,11 @@ async def create_room(req: CreateRoomRequest = Body(...), claims: dict = Depends
 @chat_router.get("/rooms/{room_id}/messages", response_model=GetMessagesResponse)
 async def get_room_messages(room_id: UUID, claims: dict = Depends(verify_token)):
     user_id = claims.get("sub")
+    if not user_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Unauthenticated access is forbidden."
+        )
 
     messages = await postgres_client.get_room_messages(user_id, room_id)
     if messages is None:
@@ -116,6 +122,18 @@ async def get_room_messages(room_id: UUID, claims: dict = Depends(verify_token))
         )
 
     return GetMessagesResponse(messages=messages)
+
+@chat_router.get("/rooms/{room_id}", response_model=RoomDto)
+async def get_rooms(room_id: UUID, claims: dict = Depends(verify_token)):
+    user_id = claims.get("sub")
+    room_info = await postgres_client.get_room_info(user_id, room_id)
+    if not room_info:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You aren't a member of this room."
+        )
+
+    return room_info
 
 @chat_router.post("/rooms/{room_id}/messages", response_model=SendMessageResponse)
 async def send_room_message(room_id: UUID, req: SendMessageRequest = Body(...), claims: dict = Depends(verify_token)):
