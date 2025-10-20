@@ -52,6 +52,11 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
         await websocket.close(code=1008) # Policy violation
         return
 
+    existing_ws = websocket_manager.get(user_id)
+    if existing_ws is not None:
+        # Disconnect the old connection before accepting the new one
+        await websocket_manager.disconnect(user_id)
+
     await websocket_manager.connect(user_id, websocket)
 
     try:
