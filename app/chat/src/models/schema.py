@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from uuid import UUID
 from typing import Optional, Literal
-from models.dto import MessageDto, RoomDto
+from models.dto import MessageDto, RoomDto, UserDto
 from datetime import datetime
 
 
@@ -14,11 +14,6 @@ class ErrorMessage(BaseModel):
 class RoomControlMessage(BaseModel):
     room_id: UUID
     status: Literal["added", "removed", "promoted", "demoted"]
-
-class UserInfo(BaseModel):
-    id: UUID
-    name: str
-    email: str
 
 ####################
 #     Requests     #
@@ -51,7 +46,7 @@ class DefaultTextResponse(BaseModel):
     message: str
 
 class GetRoomUsersResponse(BaseModel):
-    users: list[UserInfo]
+    users: list[UserDto]
 
 class GetRoomsResponse(BaseModel):
     rooms: list[RoomDto]

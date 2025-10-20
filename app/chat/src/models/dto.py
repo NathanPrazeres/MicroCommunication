@@ -22,7 +22,8 @@ class MessageDto(BaseModel):
 
 class UserDto(BaseModel):
     id: UUID
-    username: str
+    name: str
+    email: str
 
 class RoomDto(BaseModel):
     id: UUID
