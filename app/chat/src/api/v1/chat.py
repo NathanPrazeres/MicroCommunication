@@ -194,7 +194,7 @@ async def add_room_user(
     claims: dict = Depends(verify_token)
 ):
     user_id = claims.get("sub")
-    if not postgres_client.is_user_admin(user_id, room_id):
+    if not await postgres_client.is_user_admin(user_id, room_id):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You must be an admin in the room to add a user."
