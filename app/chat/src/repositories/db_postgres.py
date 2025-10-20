@@ -260,7 +260,7 @@ class PostgresClient:
                     """
                     SELECT r.id, r.name, r.description, r.room_type, r.created_by, r.created_at, r.updated_at,
                            (SELECT COUNT(*) FROM messages
-                            WHERE room_id = r.id
+                            WHERE room_id = r.id AND NOT sender_id = rp.user_id
                             AND (rp.last_read_at IS NULL OR created_at > rp.last_read_at)) as unread_count
                     FROM rooms r
                     JOIN room_participants rp ON r.id = rp.room_id
@@ -296,7 +296,7 @@ class PostgresClient:
                     """
                     SELECT r.id, r.name, r.description, r.room_type, r.created_by, r.created_at, r.updated_at,
                            (SELECT COUNT(*) FROM messages
-                            WHERE room_id = r.id
+                            WHERE room_id = r.id AND NOT sender_id = rp.user_id
                             AND (rp.last_read_at IS NULL OR created_at > rp.last_read_at)) as unread_count
                     FROM rooms r
                     JOIN room_participants rp ON r.id = rp.room_id
