@@ -10,7 +10,7 @@ class JwtManager():
         self.issuer = None
 
     async def refresh_keys(self):
-        url = f"http://{config.AUTH_SERVICE}:{config.AUTH_PORT}/realms/{config.AUTH_REALM}/.well-known/openid-configuration"
+        url = f"http://{config.AUTH_SERVICE}/realms/{config.AUTH_REALM}/.well-known/openid-configuration"
         async with httpx.AsyncClient() as client:
             resp = await client.get(url)
             resp.raise_for_status()
