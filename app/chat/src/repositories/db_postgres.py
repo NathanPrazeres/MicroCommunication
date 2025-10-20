@@ -3,6 +3,7 @@ from psycopg_pool import AsyncConnectionPool
 from typing import Optional
 import config
 from models.dto import MessageDto, RoomDto
+from utils.user_info import get_user_info
 
 
 class PostgresClient:
@@ -77,8 +78,8 @@ class PostgresClient:
 
                 # Insert other participants as members
                 for user_id in participants:
-                    if user_id == created_by:
-                        continue
+                    if user_id == created_by or not get_user_info(user_id):
+                        continue # Ignore invalid users
                     await curr.execute(
                         """
                         INSERT INTO room_participants (room_id, user_id, role)
@@ -258,8 +259,9 @@ class PostgresClient:
                 await curr.execute(
                     """
                     SELECT r.id, r.name, r.description, r.room_type, r.created_by, r.created_at, r.updated_at,
-                        rp.last_read_at,
-                        (SELECT MAX(created_at) FROM messages WHERE room_id = r.id) as latest_message_at
+                           (SELECT COUNT(*) FROM messages
+                            WHERE room_id = r.id
+                            AND (rp.last_read_at IS NULL OR created_at > rp.last_read_at)) as unread_count
                     FROM rooms r
                     JOIN room_participants rp ON r.id = rp.room_id
                     WHERE rp.user_id = %s
@@ -276,7 +278,7 @@ class PostgresClient:
                 created_by=row[4],
                 created_at=row[5],
                 updated_at=row[6],
-                has_unread=(row[8] is not None and (row[7] is None or row[7] < row[8])),
+                unread_count=row[7],
             )
             for row in rows
         ]
@@ -293,8 +295,9 @@ class PostgresClient:
                 await curr.execute(
                     """
                     SELECT r.id, r.name, r.description, r.room_type, r.created_by, r.created_at, r.updated_at,
-                        rp.last_read_at,
-                        (SELECT MAX(created_at) FROM messages WHERE room_id = r.id) as latest_message_at
+                           (SELECT COUNT(*) FROM messages
+                            WHERE room_id = r.id
+                            AND (rp.last_read_at IS NULL OR created_at > rp.last_read_at)) as unread_count
                     FROM rooms r
                     JOIN room_participants rp ON r.id = rp.room_id
                     WHERE rp.user_id = %s AND r.id = %s
@@ -314,7 +317,7 @@ class PostgresClient:
             created_by=row[4],
             created_at=row[5],
             updated_at=row[6],
-            has_unread=(row[8] is not None and (row[7] is None or row[7] < row[8])),
+            unread_count=row[7],
         )
 
     async def mark_as_read(self, user_id: UUID, room_id: UUID) -> None:

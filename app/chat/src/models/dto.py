@@ -32,4 +32,4 @@ class RoomDto(BaseModel):
     created_by: UUID
     created_at: datetime
     updated_at: Optional[datetime]
-    has_unread: Optional[bool]
+    unread_count: int = 0
