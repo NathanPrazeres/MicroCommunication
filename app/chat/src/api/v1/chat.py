@@ -29,11 +29,24 @@ from models.schema import (
     GetRoomInfoResponse
 )
 from utils.user_info import get_user_info
+from prometheus_client import Counter, Gauge
 
 
 chat_router = APIRouter(
     prefix="/api/v1",
     tags=["chat"]
+)
+
+websocket_connections_total = Counter(
+    "websocket_connections_total",
+    "Total number of WebSocket connection attempts",
+    ["endpoint", "status"]
+)
+
+active_websocket_connections = Gauge(
+    "active_websocket_connections",
+    "Number of currently active WebSocket connections",
+    ["endpoint"]
 )
 
 @chat_router.websocket("/ws")
@@ -49,8 +62,13 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
         if user_id is None:
             raise ValueError() # trigger the except block
     except:
-        await websocket.close(code=1008) # Policy violation
+        websocket_connections_total.labels(endpoint="/api/v1/ws", status="rejected").inc()
+        await websocket.close(code=1008)
         return
+
+    # Track successful connection
+    websocket_connections_total.labels(endpoint="/api/v1/ws", status="connected").inc()
+    active_websocket_connections.labels(endpoint="/api/v1/ws").inc()
 
     existing_ws = websocket_manager.get(user_id)
     if existing_ws is not None:
@@ -79,6 +97,8 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
                 pass
 
     finally:
+        # Track disconnection
+        active_websocket_connections.labels(endpoint="/api/v1/ws").dec()
         await websocket_manager.disconnect(user_id)
 
 @chat_router.get("/rooms", response_model=GetRoomsResponse)
