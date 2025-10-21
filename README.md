@@ -12,39 +12,50 @@ For this, we defined a GitLab CI that would validate and lint all our Terraform 
 
 The CI includes the [pre-commit-terraform](https://github.com/antonbabenko/pre-commit-terraform) to validate all terraform files, and [yamllint](https://github.com/adrienverge/yamllint).
 
-### Pre-requisites
-
 ## File Structure
 
 The idea was to have a structure that would encapsulate each step in setting up the environment, so that's exactly what we did, with the names being as explicit as possible:
 
-- `application`: where the actual application is hosted, along with the code that makes up the front and back ends. This includes the Kubernetes ConfigMap since it's "part" of the application
+- `app`: where each custom microservice is developed, with all their dependencies and code.
 
-- `configuration`: this is where all the configuration scripts are hosted. They are managed by Ansible, but other tools could be hosted here
+- `ansible`: this is where all the configuration scripts are hosted.
 
-- `infrastructure`: how the kubernetes nodes are provisioned. Along with that, the GCP machine specifications and networks
+- `terraform`: how the kubernetes nodes are provisioned. Along with that, the GCP machine specifications and networks.
 
-- `monitoring`: all monitoring software used to ensure uptime and logging.
+- `k8s-manifests`: Where all our kubernetes manifests are defined, including the `values` for each of the helm charts we used.
+
+- `argocd-apps`: Our ArgoCD apps. It follows the App-of-Apps pattern, and each Application points to a directory inside `k8s-manifests`.
 
 ```txt
+.
+├── ansible
+│   ├── ansible.cfg
+│   ├── inventories
+│   ├── playbooks
+│   └── roles
+│       ├── common
+│       ├── control-plane
+│       ├── gitops
+│       └── worker
 ├── app
-│   ├── kubernetes
-│   ├── ui
-│   ├── redis
-│   ├── database
-│   ├── user
 │   ├── chat
-│   └── auth
-├── configuration
-│   └── ansible
-│       ├── inventory.ini
-│       ├── playbooks
-│       └── roles
-├── infrastructure
-│   └── terraform
-├── monitoring
-│   ├── grafana
-│   └── prometheus
+│   ├── ui
+│   └── user
+├── argocd-apps
+├── k8s-manifests
+│   ├── app
+│   │   ├── chat-service
+│   │   ├── ui-service
+│   │   └── user-service
+│   ├── argocd
+│   ├── infrastructure
+│   │   ├── monitoring
+│   │   └── traefik
+│   └── platform
+│       ├── keycloak
+│       ├── postgres
+│       └── redis
+└── terraform
 ```
 
 Each folder handles its workload and sets up the work for the next layer.
@@ -58,6 +69,7 @@ flowchart LR
     C --> D{Ansible}
     D --> E{ArgoCD}
     E --> F{Kubernetes Cluster}
+
 ```
 
 This makes sure that each layer has clear **separation of concerns**:
@@ -82,9 +94,11 @@ Its job is very simple, it sets up the base for the kubernetes cluster:
 
 - creates the GCP Firewall and internal network for the VMs to communicate
 
+You can read more about our Terraform configuration in its [README](./terraform/README.md)
+
 ### Ansible
 
-Ansible's job is to configure the machine. To turn what are simple VMs into Kubernetes Nodes, Control Planes and Workers.
+Ansible's job is to configure the machine. To turn what are simple VMs into Kubernetes Nodes, Control Planes and Workers and connect them into a Cluster.
 
 Its job involves:
 
@@ -95,6 +109,8 @@ Its job involves:
 - creating tokens so the workers can join using `kubeadm join ...`
 
 - installing a [CNI plugin](https://kubernetes.io/docs/concepts/extend-kubernetes/compute-storage-net/network-plugins/) ([Flannel](https://github.com/flannel-io/flannel), [Calico](https://www.tigera.io/project-calico/), [Weaver](https://github.com/weaveworks/weave), etc.)
+
+You can read more about our Ansible configuration in its [README](./ansible/README.md)
 
 ### ArgoCD
 
@@ -108,7 +124,9 @@ ArgoCD will:
 
 - deploy our microservices (user, auth, chat, etc.)
 
-- configure and deploy our [Ingress](https://kubernetes.io/docs/concepts/services-networking/ingress/) controller
+- configure and deploy our [Ingress](https://kubernetes.io/docs/concepts/services-networking/ingress/) controller, also inside its own namespace
+
+You can read more about our ArgoCD configuration in its [README](./argocd-apps/README.md)
 
 ### Kubernetes
 
@@ -122,23 +140,23 @@ To follow the design principles of kubernetes, our monitoring stack (Grafana, Pr
 
 So, we will have the following [namespaces](https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/):
 
-- `ingress`
+- `traefik`
 
     - [Ingress Controller](#ingress-controller)
 
 - `app`
 
-    - [UI Service](#ui-service)
+    - [UI Service](./app/ui/README.md)
 
-    - [Redis Service](#redis-service)
+    - [Redis](./app/README.md#redis)
 
-    - [Auth Service](#auth-service)
+    - [Keycloak](./app/README.md#keycloak)
 
-    - [User Service](#user-service)
+    - [User Service](./app/user/README.md)
 
-    - [Chat Service](#chat-service)
+    - [Chat Service](./app/chat/README.md)
 
-    - [DB Service](#db-service)
+    - [PostgreSQL](./app/README.md#keycloak)
 
 - `monitoring`
 
@@ -154,15 +172,19 @@ The architecture will be as follows:
 
 ![Architecture](./assets/cluster.svg)
 
-If time allows it, we will try to have a more production-ready approach to namespaces, separating them into:
-
-- `app-backend`: this is where the [user](#user-service), [auth](#auth-service) and [chat](#chat-service) will live
-
-- `app-frontend`: the [ui](#ui-service) will live alone in this namespace
-
-- `app-data`: the [redis](#redis-service) and [db](#db-service) components will be hosted in this namespace
-
 ## Database Architecture
+
+We will have 2 (technically 3) databases:
+
+- `user-service-db`: Used by the user-service to save essential information about the users, their preferences and their contacts
+
+- `chat-service-db`: Used by the chat-service to save essential information about the messages, groups, and other essential information
+
+and the third, "hidden" db:
+
+- `keycloak`: Database managed and owned entirely by Keycloak, our IdP
+
+### User Service DB
 
 ```mermaid
 erDiagram
@@ -195,7 +217,15 @@ erDiagram
         VARCHAR nickname
         TIMESTAMP added_at
     }
+    %% Relationships
+    USERS ||--o{ USER_PROFILES : has
+    USERS ||--o{ CONTACTS : "can add"
+```
 
+### Chat Service DB
+
+```mermaid
+erDiagram
     ROOMS {
         UUID id PK
         VARCHAR name
@@ -232,32 +262,8 @@ erDiagram
     }
 
     %% Relationships
-    USERS ||--o{ USER_PROFILES : has
-    USERS ||--o{ CONTACTS : "can add"
-    USERS ||--o{ ROOMS : "creates"
-    USERS ||--o{ ROOM_PARTICIPANTS : "joins"
-    USERS ||--o{ MESSAGES : "sends"
-
     ROOMS ||--o{ ROOM_PARTICIPANTS : "has"
     ROOMS ||--o{ MESSAGES : "contains"
 
     MESSAGES ||--o{ MESSAGE_READS : "read by"
 ```
-
-### Ingress Controller
-
-### UI Service
-
-### Redis Service
-
-### Auth Service
-
-### User Service
-
-### Chat Service
-
-### DB Service
-
-### Monitoring Service
-
-### ArgoCD
