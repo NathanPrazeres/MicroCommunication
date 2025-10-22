@@ -151,31 +151,10 @@
         name: argocd-ssh-known-hosts-cm
         namespace: argocd
         labels:
-          app.kubernetes.io/name: argocd-cm
           app.kubernetes.io/part-of: argocd
       data:
         ssh_known_hosts: |
           {{ gitlab_host_keys.stdout }}
-
-- name: Create repository secret with SSH key
-  kubernetes.core.k8s:
-    state: present
-    definition:
-      apiVersion: v1
-      kind: Secret
-      metadata:
-        name: private-repo
-        namespace: argocd
-        labels:
-          argocd.argoproj.io/secret-type: repository
-      type: Opaque
-      stringData:
-        type: git
-        url: "git@gitlab.rnl.tecnico.ulisboa.pt:{{ git_repo_org }}/{{ argocd_repo_name }}.git"
-        sshPrivateKey: |
-          {{ ssh_private_key }}
-  when: argocd_repo_ssh_key_path is defined
-  no_log: true
 
 - name: Restart ArgoCD repo-server to pick up new known hosts
   kubernetes.core.k8s:
@@ -199,6 +178,26 @@
       type: Ready
       status: "True"
     wait_timeout: 120
+
+- name: Create repository secret with SSH key
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: private-repo
+        namespace: argocd
+        labels:
+          argocd.argoproj.io/secret-type: repository
+      type: Opaque
+      stringData:
+        type: git
+        url: "git@gitlab.rnl.tecnico.ulisboa.pt:{{ git_repo_org }}/{{ argocd_repo_name }}.git"
+        sshPrivateKey: |
+          {{ ssh_private_key }}
+  when: argocd_repo_ssh_key_path is defined
+  no_log: true
 
 - name: Wait for repository to be registered
   pause:
