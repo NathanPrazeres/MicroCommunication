@@ -9,21 +9,27 @@ service:
   # spec:
   #   loadBalancerIP: "IP"
 
-ports:
-  web:
-    exposedPort: 80
-    nodePort: 30000
-    redirections:
-      entryPoint:
-        to: websecure
-        scheme: https
-        permanent: true
-
-  # HTTPS entrypoint
-  websecure:
-    port: 443
-    nodePort: 30001
-    protocol: TCP
+# ports:
+#   web:
+#     port: 8080
+#     expose:
+#       default: true
+#     exposedPort: 80
+#     nodePort: 30000
+#     redirections:
+#       entryPoint:
+#         to: websecure
+#         scheme: https
+#         permanent: true
+#
+#   # HTTPS entrypoint
+#   websecure:
+#     port: 8443
+#     expose:
+#       default: true
+#     exposedPort: 443
+#     nodePort: 30001
+#     protocol: TCP
 
 # Enables the dashboard in Secure Mode
 api:
