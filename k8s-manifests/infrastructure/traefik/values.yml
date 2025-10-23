@@ -4,8 +4,8 @@ deployment:
 
 service:
   type: NodePort # LoadBalancer  # or NodePort for local
-  annotations:
-    cloud.google.com/load-balancer-type: "External"
+  # annotations:
+  #   cloud.google.com/load-balancer-type: "External"
   # spec:
   #   loadBalancerIP: "IP"
 
