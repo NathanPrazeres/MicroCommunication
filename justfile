@@ -48,6 +48,8 @@ ssh-master:
 
 grafana:
 	@echo "Grafana will be available on localhost:3000..."
+	gcloud secrets versions access latest --secret=ssh-private-key-secret-name > /tmp/ansible-key
+	@chmod 0600 /tmp/ansible-key
 	@ssh-add /tmp/ansible-key
 	@ssh -L 3000:localhost:3000 debian@"$(ansible-inventory -i ansible/inventories/inventory.gcp.yml --graph \
 		| grep -A 1 "@_master" \
@@ -62,6 +64,8 @@ grafana-pw:
 
 argocd:
 	@echo "ArgoCD will be available on localhost:8080..."
+	gcloud secrets versions access latest --secret=ssh-private-key-secret-name > /tmp/ansible-key
+	@chmod 0600 /tmp/ansible-key
 	@ssh-add /tmp/ansible-key
 	@ssh -L 8080:localhost:8080 debian@"$(ansible-inventory -i ansible/inventories/inventory.gcp.yml --graph \
 		| grep -A 1 "@_master" \
@@ -76,6 +80,8 @@ argocd-pw:
 
 traefik:
 	@echo "Traefik will be available on localhost:9000/dashboard..."
+	gcloud secrets versions access latest --secret=ssh-private-key-secret-name > /tmp/ansible-key
+	@chmod 0600 /tmp/ansible-key
 	@ssh-add /tmp/ansible-key
 	@ssh -L 9000:localhost:31300 debian@"$(ansible-inventory -i ansible/inventories/inventory.gcp.yml --graph \
 		| grep -A 1 "@_master" \
