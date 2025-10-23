@@ -4,8 +4,6 @@ deployment:
 
 service:
   type: LoadBalancer  # or NodePort for local
-  # annotations:
-  #   cloud.google.com/load-balancer-type: "External"
   spec:
     loadBalancerIP: 34.175.115.16
 
@@ -30,14 +28,6 @@ service:
 #     exposedPort: 443
 #     nodePort: 30001
 #     protocol: TCP
-
-ports:
-  traefik:
-    port: 9000
-    expose:
-      default: true
-    exposedPort: 9000
-    protocol: TCP
 
 additionalArguments:
   - "--api.insecure=true"
@@ -102,13 +92,13 @@ resources:
     cpu: 300m
     memory: 150Mi
 
-autoscaling:
-  enabled: true
-  maxReplicas: 2
-  metrics:
-  - type: Resource
-    resource:
-      name: cpu
-      target:
-        type: Utilization
-        averageUtilization: 80
+# autoscaling:
+#   enabled: true
+#   maxReplicas: 2
+#   metrics:
+#   - type: Resource
+#     resource:
+#       name: cpu
+#       target:
+#         type: Utilization
+#         averageUtilization: 80
