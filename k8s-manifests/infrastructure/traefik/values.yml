@@ -15,7 +15,12 @@ ports:
     expose:
       default: true
     exposedPort: 80
-    protocol: TCP
+    nodePort: 30000
+    redirections:
+      entryPoint:
+        to: websecure
+        scheme: https
+        permanent: true
 
   # HTTPS entrypoint
   websecure:
@@ -23,14 +28,7 @@ ports:
     expose:
       default: true
     exposedPort: 443
-    protocol: TCP
-
-  # Dashboard entrypoint
-  traefik:
-    port: 9000
-    expose:
-      default: false
-    exposedPort: 9000
+    nodePort: 30001
     protocol: TCP
 
 # Enables the dashboard in Secure Mode
