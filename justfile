@@ -58,7 +58,7 @@ grafana-pw:
 	@ssh -L 8080:localhost:8080 debian@"$(ansible-inventory -i ansible/inventories/inventory.gcp.yml --graph \
 		| grep -A 1 "@_master" \
 		| tail -n 1 \
-		| sed 's/.*--//; s/ //g')" 'kubectl -n argocd get secret kube-prometheus-stack-grafana -o jsonpath="{.data.admin-password}" | base64 -d && echo "\n"'
+		| sed 's/.*--//; s/ //g')" 'kubectl -n argocd get secret kube-prometheus-stack-grafana -o jsonpath="{.data.admin-password}" | base64 -d'
 
 argocd:
 	@echo "ArgoCD will be available on localhost:8080..."
@@ -72,7 +72,7 @@ argocd-pw:
 	@ssh -L 8080:localhost:8080 debian@"$(ansible-inventory -i ansible/inventories/inventory.gcp.yml --graph \
 		| grep -A 1 "@_master" \
 		| tail -n 1 \
-		| sed 's/.*--//; s/ //g')" 'kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d && echo "\n"'
+		| sed 's/.*--//; s/ //g')" 'kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d'
 
 cleanup:
   rm -f /tmp/ansible-key plan.out
