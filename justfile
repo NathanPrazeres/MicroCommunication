@@ -4,9 +4,9 @@ default:
   @just --list
 
 requirements:
-	echo "gcloud"
-	echo "terraform"
-	echo "ansible"
+	@echo "gcloud"
+	@echo "terraform"
+	@echo "ansible"
 
 login:
 	gcloud auth login
@@ -39,10 +39,24 @@ hosts:
 	ansible-inventory -i inventories/inventory.gcp.yml --graph
 
 ssh-master:
-	ssh -L 8080:localhost:8080 debian@"$(ansible-inventory -i ansible/inventories/inventory.gcp.yml --graph \
+	@ssh -L 8080:localhost:8080 debian@"$(ansible-inventory -i ansible/inventories/inventory.gcp.yml --graph \
 		| grep -A 1 "@_master" \
 		| tail -n 1 \
 		| sed 's/.*--//; s/ //g')"
+
+grafana:
+	@echo "Grafana will be available on localhost:3000..."
+	@ssh -L 3000:localhost:3000 debian@"$(ansible-inventory -i ansible/inventories/inventory.gcp.yml --graph \
+		| grep -A 1 "@_master" \
+		| tail -n 1 \
+		| sed 's/.*--//; s/ //g')" 'kubectl get secret -n monitoring kube-prometheus-stack-grafana -o jsonpath="{.data.admin-password}" | base64 -d && echo "\n" && kubectl port-forward -n monitoring svc/kube-prometheus-stack-grafana 3000:80'
+
+argocd:
+	@echo "Grafana will be available on localhost:8080..."
+	@ssh -L 8080:localhost:8080 debian@"$(ansible-inventory -i ansible/inventories/inventory.gcp.yml --graph \
+		| grep -A 1 "@_master" \
+		| tail -n 1 \
+		| sed 's/.*--//; s/ //g')" 'kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d && echo "\n" && kubectl port-forward svc/argocd-server -n argocd 8080:443'
 
 cleanup:
     rm -f /tmp/ansible-key plan.out
