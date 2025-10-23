@@ -52,7 +52,7 @@ grafana:
 	@ssh -L 3000:localhost:3000 debian@"$(ansible-inventory -i ansible/inventories/inventory.gcp.yml --graph \
 		| grep -A 1 "@_master" \
 		| tail -n 1 \
-		| sed 's/.*--//; s/ //g')" 'kubectl get secret -n monitoring kube-prometheus-stack-grafana -o jsonpath="{.data.admin-password}" | base64 -d && echo "\n" && kubectl port-forward -n monitoring svc/kube-prometheus-stack-grafana 3000:80'
+		| sed 's/.*--//; s/ //g')" 'kubectl get secret -n monitoring kube-prometheus-stack-grafana -o jsonpath="{.data.admin-password}" | base64 -d && kubectl port-forward -n monitoring svc/kube-prometheus-stack-grafana 3000:80'
 
 grafana-pw:
 	@ssh -L 8080:localhost:8080 debian@"$(ansible-inventory -i ansible/inventories/inventory.gcp.yml --graph \
@@ -66,7 +66,7 @@ argocd:
 	@ssh -L 8080:localhost:8080 debian@"$(ansible-inventory -i ansible/inventories/inventory.gcp.yml --graph \
 		| grep -A 1 "@_master" \
 		| tail -n 1 \
-		| sed 's/.*--//; s/ //g')" 'kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d && echo "\n" && kubectl port-forward svc/argocd-server -n argocd 8080:443'
+		| sed 's/.*--//; s/ //g')" 'kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d && kubectl port-forward svc/argocd-server -n argocd 8080:443'
 
 argocd-pw:
 	@ssh -L 8080:localhost:8080 debian@"$(ansible-inventory -i ansible/inventories/inventory.gcp.yml --graph \
