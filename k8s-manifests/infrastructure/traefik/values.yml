@@ -1,6 +1,6 @@
 ---
 deployment:
-  replicas: 0
+  replicas: 1
 
 service:
   type: NodePort # LoadBalancer  # or NodePort for local
@@ -32,37 +32,36 @@ service:
 additionalArguments:
   - "--api.insecure=true"
 
-# Enables the dashboard in Secure Mode
 api:
   dashboard: true
-  insecure: true
+  # insecure: true
 
 ingressRoute:
   dashboard:
     enabled: true
-    matchRule: PathPrefix(`/dashboard`)
+    matchRule: PathPrefix(`/dashboard`) || PathPrefix(`/api`)
     entryPoints:
-      - web
-    middlewares:
-      - name: dashboard-auth
+      - traefik
+    middlewares: []
 
 # Creates a BasiAuth Middleware and Secret for the Dashboard Security
-extraObjects:
-  - apiVersion: v1
-    kind: Secret
-    metadata:
-      name: dashboard-auth-secret
-    type: kubernetes.io/basic-auth
-    stringData:
-      username: admin
-      password: "admin"
-  - apiVersion: traefik.io/v1alpha1
-    kind: Middleware
-    metadata:
-      name: dashboard-auth
-    spec:
-      basicAuth:
-        secret: dashboard-auth-secret
+
+# extraObjects:
+#   - apiVersion: v1
+#     kind: Secret
+#     metadata:
+#       name: dashboard-auth-secret
+#     type: kubernetes.io/basic-auth
+#     stringData:
+#       username: admin
+#       password: "admin"
+#   - apiVersion: traefik.io/v1alpha1
+#     kind: Middleware
+#     metadata:
+#       name: dashboard-auth
+#     spec:
+#       basicAuth:
+#         secret: dashboard-auth-secret
 
 logs:
   general:
