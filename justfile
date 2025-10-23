@@ -40,6 +40,7 @@ hosts:
 	ansible-inventory -i inventories/inventory.gcp.yml --graph
 
 ssh-master:
+	@ssh-add /tmp/ansible-key
 	@ssh -L 8080:localhost:8080 debian@"$(ansible-inventory -i ansible/inventories/inventory.gcp.yml --graph \
 		| grep -A 1 "@_master" \
 		| tail -n 1 \
