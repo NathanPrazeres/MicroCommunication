@@ -39,6 +39,7 @@ api:
 ingressRoute:
   dashboard:
     enabled: true
+    matchRule: PathPrefix(`/dashboard`)
     entryPoints:
       - web
     middlewares:
