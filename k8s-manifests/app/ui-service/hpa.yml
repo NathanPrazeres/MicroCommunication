@@ -2,15 +2,15 @@
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: user-service-hpa
+  name: ui-service-hpa
   namespace: app
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: user-service
+    name: ui-service
   minReplicas: 2
-  maxReplicas: 10
+  maxReplicas: 6
   metrics:
   - type: Resource
     resource:
@@ -24,20 +24,3 @@ spec:
       target:
         type: Utilization
         averageUtilization: 80
-  behavior:
-    scaleDown:
-      stabilizationWindowSeconds: 300  # Wait 5min before scaling down
-      policies:
-      - type: Percent
-        value: 50  # Scale down max 50% of pods at a time
-        periodSeconds: 60
-    scaleUp:
-      stabilizationWindowSeconds: 0
-      policies:
-      - type: Percent
-        value: 100  # Can double pods at once
-        periodSeconds: 15
-      - type: Pods
-        value: 4  # Or add 4 pods at once
-        periodSeconds: 15
-      selectPolicy: Max
