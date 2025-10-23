@@ -31,6 +31,16 @@ service:
 #     nodePort: 30001
 #     protocol: TCP
 
+ports:
+  traefik:
+    port: 9000
+    expose: true
+    exposedPort: 9000
+    protocol: TCP
+
+# additionalArguments:
+#   - "--api.insecure=true"
+
 # Enables the dashboard in Secure Mode
 api:
   dashboard: true
