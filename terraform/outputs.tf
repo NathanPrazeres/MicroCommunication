@@ -5,5 +5,5 @@ output "ssh_private_key" {
 
 output "traefik_external_ip" {
   description = "Static external IP for Traefik LoadBalancer"
-  value       = google_compute_address.traefik_lb_ip.address
+  value       = google_compute_address.lb_ip.address
 }

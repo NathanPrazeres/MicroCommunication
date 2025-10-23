@@ -11,12 +11,12 @@ resource "google_compute_address" "lb_ip" {
 
 resource "null_resource" "inject_traefik_ip" {
   triggers = {
-    ip = google_compute_address.traefik_ip.address
+    ip = google_compute_address.lb_ip.address
   }
 
   provisioner "local-exec" {
     command = <<EOT
-      sed -i "s|loadBalancerIP:.*|loadBalancerIP: ${google_compute_address.traefik_ip.address}|" ../k8s-manifests/infrastructure/traefik/values.yaml
+      sed -i "s|loadBalancerIP:.*|loadBalancerIP: ${google_compute_address.lb_ip.address}|" ../k8s-manifests/infrastructure/traefik/values.yml
     EOT
   }
 }
