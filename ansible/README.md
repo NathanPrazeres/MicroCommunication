@@ -8,6 +8,8 @@ To run these Ansible playbooks, we first need 2 essential files:
 
 ## After Execution
 
+### ArgoCD credentials
+
 After the execution of the GitOps role, ArgoCD will be deployed, but you will not have access to the dashboard since it's hosted on the GCP. To get access to the dashboard you will need to do port forwarding via `ssh`:
 
 ```bash
@@ -26,4 +28,14 @@ But still, you will not have access, because you will not know the password, so 
 kubectl -n argocd get secret argocd-initial-admin-secret \
   -o jsonpath="{.data.password}" | base64 -d
 echo
+```
+
+### Grafana Credentials
+
+Grafana is hosted on port 3000, so you'll need to follow the same steps as before, but for port 3000 (80 in the case of `kube-prometheus-stack`)
+
+Getting the credentials:
+
+```bash
+kubectl get secret -n monitoring kube-prometheus-stack-grafana -o jsonpath="{.data.admin-password}" | base64 -d
 ```

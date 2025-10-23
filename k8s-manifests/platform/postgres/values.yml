@@ -59,6 +59,8 @@ metrics:
   serviceMonitor:
     enabled: true
     namespace: monitoring
+    labels:
+      release: kube-prometheus-stack
 
 backup:
   enabled: false

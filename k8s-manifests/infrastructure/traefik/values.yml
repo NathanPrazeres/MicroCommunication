@@ -43,9 +43,15 @@ metrics:
   prometheus:
     enabled: true
     entryPoint: metrics
-    # serviceMonitor:
-    #   enabled: true
-    #   namespace: monitoring
+    addEntryPointsLabels: true
+    addRoutersLabels: true
+    addServicesLabels: true
+    serviceMonitor:
+      enabled: true
+      namespace: monitoring
+      honorLabels: true
+      additionalLabels:
+        release: kube-prometheus-stack
 
 resources:
   requests:
