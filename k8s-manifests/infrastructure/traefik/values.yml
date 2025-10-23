@@ -3,11 +3,11 @@ deployment:
   replicas: 0
 
 service:
-  type: NodePort # LoadBalancer  # or NodePort for local
+  type: LoadBalancer  # or NodePort for local
   # annotations:
   #   cloud.google.com/load-balancer-type: "External"
-  # spec:
-  #   loadBalancerIP: "IP"
+  spec:
+    loadBalancerIP: 34.175.115.16
 
 # ports:
 #   web:
@@ -39,8 +39,8 @@ ports:
     exposedPort: 9000
     protocol: TCP
 
-# additionalArguments:
-#   - "--api.insecure=true"
+additionalArguments:
+  - "--api.insecure=true"
 
 # Enables the dashboard in Secure Mode
 api:
