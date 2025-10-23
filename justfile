@@ -74,5 +74,13 @@ argocd-pw:
 		| tail -n 1 \
 		| sed 's/.*--//; s/ //g')" 'kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d'
 
+traefik:
+	@echo "Traefik will be available on localhost:9000..."
+	@ssh-add /tmp/ansible-key
+	@ssh -L 9000:localhost:9000 debian@"$(ansible-inventory -i ansible/inventories/inventory.gcp.yml --graph \
+		| grep -A 1 "@_master" \
+		| tail -n 1 \
+		| sed 's/.*--//; s/ //g')" 'kubectl port-forward svc/traefik 9000:9000 -n traefik'
+
 cleanup:
   rm -f /tmp/ansible-key plan.out
