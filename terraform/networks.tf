@@ -10,11 +10,6 @@ resource "google_compute_subnetwork" "k8s_subnetwork" {
   network       = google_compute_network.k8s_vpc.self_link
 }
 
-resource "google_compute_address" "master_ip" {
-  name   = "k8s-master-ip"
-  region = var.GCP_REGION
-}
-
 resource "google_compute_firewall" "internal_k8s_traffic" {
   name    = "k8s-internal"
   network = google_compute_network.k8s_vpc.self_link

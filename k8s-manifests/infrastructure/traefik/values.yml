@@ -4,28 +4,32 @@ deployment:
 
 service:
   type: NodePort # LoadBalancer  # or NodePort for local
+  annotations:
+    cloud.google.com/load-balancer-type: "External"
+  # spec:
+  #   loadBalancerIP: "IP"
 
 ports:
   web:
-    port: 80
+    port: 8080
     expose:
       default: true
-    exposedPort: 8080
+    exposedPort: 80
     protocol: TCP
 
   # HTTPS entrypoint
   websecure:
-    port: 443
+    port: 8443
     expose:
       default: true
-    exposedPort: 8443
+    exposedPort: 443
     protocol: TCP
 
   # Dashboard entrypoint
   traefik:
     port: 9000
     expose:
-      default: true
+      default: false
     exposedPort: 9000
     protocol: TCP
 
@@ -33,11 +37,6 @@ ports:
 api:
   dashboard: true
   insecure: true
-
-ingressRoute:
-  dashboard:
-    enabled: true
-    entryPoints: ["traefik"]
 
 logs:
   general:

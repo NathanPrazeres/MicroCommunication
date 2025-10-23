@@ -3,6 +3,7 @@ output "ssh_private_key" {
   sensitive = true
 }
 
-output "master_static_ip" {
-  value = google_compute_address.master_ip.address
+output "traefik_external_ip" {
+  description = "Static external IP for Traefik LoadBalancer"
+  value       = google_compute_address.traefik_lb_ip.address
 }
