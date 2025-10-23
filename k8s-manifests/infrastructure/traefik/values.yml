@@ -16,7 +16,8 @@ ports:
   # HTTPS entrypoint
   websecure:
     port: 443
-    expose: true
+    expose:
+      default: true
     exposedPort: 8443
     protocol: TCP
 
