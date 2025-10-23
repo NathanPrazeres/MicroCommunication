@@ -1,60 +1,118 @@
 stages:
   - validate
+  - infrastructure
+  - provision
 
-# Future stages
-# - build
-# - push
-# - deploy
-# - cleanup
+variables:
+  PRE_COMMIT_COLOR: always
+  TF_ROOT: ${CI_PROJECT_DIR}/terraform
+  ANSIBLE_ROOT: ${CI_PROJECT_DIR}/ansible
+  GCP_PROJECT_ID: "agisit-g20"
+  GCP_REGION: "europe-southwest1"
 
-pre-commit:
+workflow:
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_TAG
+    - when: manual
+
+# ==================== VALIDATE STAGE ====================
+terraform:validate:
   stage: validate
-  image: 
-    name: stangirard/pre-commit-terraform:0.12.29-1
-  variables:
-    PRE_COMMIT_HOME: ${CI_PROJECT_DIR}/.cache/pre-commit
-  cache:
-    paths:
-      - ${PRE_COMMIT_HOME}
+  image: hashicorp/terraform:latest
+  before_script:
+    - cd $TF_ROOT
+    - terraform init -backend=false
   script:
-    - echo "Running pre-commit hooks using dedicated image..."
-    - pre-commit run --all-files --show-diff-on-failure
-  tags: [validation]
+    - terraform fmt -check
+    - terraform validate
+  rules:
+    - changes:
+        - terraform/**/*
 
-yamllint:
+# ansible:lint:
+#   stage: validate
+#   image: cytopia/ansible-lint:latest
+#   script:
+#     - cd $ANSIBLE_ROOT
+#     - ansible-lint playbooks/*.yml
+#   rules:
+#     - changes:
+#         - ansible/**/*
+
+ansible:lint:
   stage: validate
-  image: registry.gitlab.com/pipeline-components/yamllint:latest
   script:
-    - yamllint .
-  tags: [validation]
----
-name: Deploy Infrastructure
-on:
-  push:
-    branches: [main]
+    - pre-commit install
+    - pre-commit run --all-files
+  rules:
+    - changes:
+        - ansible/**/*
+
+# ==================== INFRASTRUCTURE STAGE ====================
+terraform:plan:
+  stage: infrastructure
+  image: hashicorp/terraform:latest
+  before_script:
+    - cd $TF_ROOT
+    # Authenticate to GCP using service account key stored in GitLab CI/CD variables
+    - echo "$GCP_SERVICE_ACCOUNT_KEY" > ${CI_PROJECT_DIR}/gcp-key.json
+    - export GOOGLE_APPLICATION_CREDENTIALS=${CI_PROJECT_DIR}/gcp-key.json
+    - terraform init
+  script:
+    - terraform plan -out=tfplan
+    - terraform show -json tfplan > tfplan.json
+  artifacts:
     paths:
-      - 'terraform/**'
-jobs:
-  terraform:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
-      
-      - name: Port Forward Keycloak
-        run: |
-          kubectl port-forward -n infrastructure svc/keycloak 8080:8080 &
-          sleep 10
-      
-      - name: Terraform Init
-        working-directory: terraform
-        run: terraform init
-      
-      - name: Terraform Apply
-        working-directory: terraform
-        env:
-          TF_VAR_keycloak_admin_password: ${{ secrets.KEYCLOAK_ADMIN_PASSWORD }}
-          TF_VAR_user_service_client_secret: ${{ secrets.USER_SERVICE_CLIENT_SECRET }}
-        run: terraform apply -auto-approve
+      - $TF_ROOT/tfplan
+      - $TF_ROOT/tfplan.json
+    expire_in: 1 week
+  only:
+    - main
+    - merge_requests
+
+terraform:apply:
+  stage: infrastructure
+  image: hashicorp/terraform:latest
+  before_script:
+    - cd $TF_ROOT
+    - echo "$GCP_SERVICE_ACCOUNT_KEY" > ${CI_PROJECT_DIR}/gcp-key.json
+    - export GOOGLE_APPLICATION_CREDENTIALS=${CI_PROJECT_DIR}/gcp-key.json
+    - terraform init
+  script:
+    - terraform apply -auto-approve
+  only:
+    - main
+  when: manual  # Require manual approval for infrastructure changes
+
+# ==================== PROVISION STAGE ====================
+ansible:provision:
+  stage: provision
+  image: cytopia/ansible:latest-tools
+  dependencies:
+    - terraform:apply
+  before_script:
+    # Fetch SSH key from Google Secret Manager
+
+    # TODO: install gcloud
+
+    - echo "$GCP_SERVICE_ACCOUNT_KEY" > ${CI_PROJECT_DIR}/gcp-key.json
+    - export GOOGLE_APPLICATION_CREDENTIALS=${CI_PROJECT_DIR}/gcp-key.json
+
+    - chmod 600 /tmp/ansible_key
+    # Add known hosts (important for SSH)
+    - mkdir -p ~/.ssh
+
+    # TODO: find a way to keyscan the hosts before connecting
+    - ssh-keyscan -H $() >> ~/.ssh/known_hosts 2>/dev/null || true
+  script:
+    - cd $ANSIBLE_ROOT
+    # Test connectivity first
+    - ansible all -i ${CI_PROJECT_DIR}/inventories/inventory.gcp.yml -m ping
+
+    - ansible-playbook -i ${CI_PROJECT_DIR}/inventories/inventory.gcp.yml playbooks/cluster.yml
+  only:
+    - main
+  needs:
+    - terraform:apply
