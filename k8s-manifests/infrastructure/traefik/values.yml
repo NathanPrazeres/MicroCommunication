@@ -1,6 +1,6 @@
 ---
 deployment:
-  replicas: 1
+  replicas: 0
 
 service:
   type: NodePort # LoadBalancer  # or NodePort for local
