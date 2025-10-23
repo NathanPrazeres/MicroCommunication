@@ -3,7 +3,7 @@ deployment:
   replicas: 0
 
 service:
-  type: LoadBalancer  # or NodePort for local
+  type: NodePort # LoadBalancer  # or NodePort for local
   spec:
     loadBalancerIP: 34.175.115.16
 
