@@ -1,33 +1,33 @@
 ---
 deployment:
-  replicas: 1
+  replicas: 0
 
 service:
-  type: NodePort # LoadBalancer  # or NodePort for local
+  type: LoadBalancer #NodePort # LoadBalancer  # or NodePort for local
   spec:
     loadBalancerIP: 34.175.115.16
 
-# ports:
-#   web:
-#     port: 8080
-#     expose:
-#       default: true
-#     exposedPort: 80
-#     nodePort: 30000
-#     redirections:
-#       entryPoint:
-#         to: websecure
-#         scheme: https
-#         permanent: true
-#
-#   # HTTPS entrypoint
-#   websecure:
-#     port: 8443
-#     expose:
-#       default: true
-#     exposedPort: 443
-#     nodePort: 30001
-#     protocol: TCP
+ports:
+  web:
+    port: 8080
+    expose:
+      default: true
+    exposedPort: 80
+    nodePort: 30000
+    redirections:
+      entryPoint:
+        to: websecure
+        scheme: https
+        permanent: true
+
+  # HTTPS entrypoint
+  websecure:
+    port: 8443
+    expose:
+      default: true
+    exposedPort: 443
+    nodePort: 30001
+    protocol: TCP
 
 additionalArguments:
   - "--api.insecure=true"
@@ -46,22 +46,22 @@ ingressRoute:
 
 # Creates a BasiAuth Middleware and Secret for the Dashboard Security
 
-# extraObjects:
-#   - apiVersion: v1
-#     kind: Secret
-#     metadata:
-#       name: dashboard-auth-secret
-#     type: kubernetes.io/basic-auth
-#     stringData:
-#       username: admin
-#       password: "admin"
-#   - apiVersion: traefik.io/v1alpha1
-#     kind: Middleware
-#     metadata:
-#       name: dashboard-auth
-#     spec:
-#       basicAuth:
-#         secret: dashboard-auth-secret
+extraObjects:
+  - apiVersion: v1
+    kind: Secret
+    metadata:
+      name: dashboard-auth-secret
+    type: kubernetes.io/basic-auth
+    stringData:
+      username: admin
+      password: "admin"
+  - apiVersion: traefik.io/v1alpha1
+    kind: Middleware
+    metadata:
+      name: dashboard-auth
+    spec:
+      basicAuth:
+        secret: dashboard-auth-secret
 
 logs:
   general:
@@ -91,13 +91,13 @@ resources:
     cpu: 300m
     memory: 150Mi
 
-# autoscaling:
-#   enabled: true
-#   maxReplicas: 2
-#   metrics:
-#   - type: Resource
-#     resource:
-#       name: cpu
-#       target:
-#         type: Utilization
-#         averageUtilization: 80
+autoscaling:
+  enabled: true
+  maxReplicas: 2
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 80
