@@ -21,7 +21,7 @@ ports:
     expose:
       default: true
     exposedPort: 9000
-    nodePort: 30001
+    nodePort: 30021
   web:
     port: 8000
     expose:
