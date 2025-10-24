@@ -12,26 +12,24 @@ deployment:
 
 service:
   type: NodePort
-  spec:
-    loadBalancerIP: 34.175.115.16
 
-ports:
-  traefik:
-    port: 9000
-    expose:
-      default: true
-    exposedPort: 9000
-    nodePort: 30021
-  web:
-    port: 8000
-    expose:
-      default: true
-    exposedPort: 80
-  websecure:
-    port: 8443
-    expose:
-      default: true
-    exposedPort: 443
+# ports:
+#   traefik:
+#     port: 9000
+#     expose:
+#       default: true
+#     exposedPort: 9000
+#     nodePort: 30021
+#   web:
+#     port: 8000
+#     expose:
+#       default: true
+#     exposedPort: 80
+#   websecure:
+#     port: 8443
+#     expose:
+#       default: true
+#     exposedPort: 443
 
 additionalArguments:
   - "--api.insecure=true"
@@ -40,7 +38,7 @@ additionalArguments:
 
 api:
   dashboard: true
-  # insecure: true
+  insecure: true
 
 ping:
   enabled: true
@@ -49,7 +47,7 @@ ping:
 ingressRoute:
   dashboard:
     enabled: true
-    matchRule: PathPrefix(`/dashboard`) || PathPrefix(`/api`)
+    matchRule: Host(`traefik.localhost`) || PathPrefix(`/dashboard`) || PathPrefix(`/api`)
     entryPoints:
       - web
     middlewares: []
