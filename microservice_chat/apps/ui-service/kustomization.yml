@@ -5,6 +5,5 @@ resources:
   - configmap.yml
   - deployment.yml
   - hpa.yml
-  - metrics.yml
   - secrets.yml
   - service.yml
