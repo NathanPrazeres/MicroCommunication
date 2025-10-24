@@ -85,9 +85,6 @@ autoscaling:
         target:
           type: Utilization
           averageUtilization: 80
-  scaleTargetRef:
-    apiVersion: argoproj.io/v1alpha1
-    kind: Rollout
 
 extraObjects:
   - apiVersion: argoproj.io/v1alpha1
