@@ -1,6 +1,14 @@
 ---
 deployment:
   replicas: 1
+  readinessProbe:
+    httpGet:
+      path: /ping
+      port: 9000
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    timeoutSeconds: 3
+    failureThreshold: 3
 
 service:
   type: NodePort # LoadBalancer  # or NodePort for local
