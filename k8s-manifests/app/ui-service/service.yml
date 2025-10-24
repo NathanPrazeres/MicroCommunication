@@ -12,6 +12,6 @@ spec:
   ports:
   - name: http
     port: 4173
-    targetPort: 4173
+    targetPort: 80
     protocol: TCP
   type: ClusterIP
