@@ -11,31 +11,26 @@ deployment:
     failureThreshold: 3
 
 service:
-  type: NodePort # LoadBalancer  # or NodePort for local
+  type: NodePort
   spec:
     loadBalancerIP: 34.175.115.16
 
-# ports:
-#   web:
-#     port: 8080
-#     expose:
-#       default: true
-#     exposedPort: 80
-#     nodePort: 30000
-#     redirections:
-#       entryPoint:
-#         to: websecure
-#         scheme: https
-#         permanent: true
-#
-#   # HTTPS entrypoint
-#   websecure:
-#     port: 8443
-#     expose:
-#       default: true
-#     exposedPort: 443
-#     nodePort: 30001
-#     protocol: TCP
+ports:
+  traefik:
+    port: 9000
+    expose:
+      default: true
+    exposedPort: 9000
+  web:
+    port: 8000
+    expose:
+      default: true
+    exposedPort: 80
+  websecure:
+    port: 8443
+    expose:
+      default: true
+    exposedPort: 443
 
 additionalArguments:
   - "--api.insecure=true"
