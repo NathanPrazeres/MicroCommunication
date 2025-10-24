@@ -1,10 +1,9 @@
 ---
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-
 resources:
   - ingress.yml
   - middleware.yml
-  # - apps/chat-service
-  # - apps/ui-service
-  # - apps/user-service
+  - apps/chat-service
+  - apps/ui-service
+  - apps/user-service
