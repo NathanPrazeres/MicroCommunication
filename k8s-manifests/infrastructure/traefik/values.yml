@@ -1,32 +1,29 @@
 ---
 deployment:
-  replicas: 0
+  replicas: 0  # Managed by Rollout
 
 service:
-  type: LoadBalancer #NodePort # LoadBalancer  # or NodePort for local
+  type: LoadBalancer
   spec:
     loadBalancerIP: 34.175.115.16
 
 ports:
   web:
-    port: 8080
+    port: 8000
     expose:
       default: true
     exposedPort: 80
-    nodePort: 30000
     redirections:
       entryPoint:
         to: websecure
         scheme: https
         permanent: true
 
-  # HTTPS entrypoint
   websecure:
     port: 8443
     expose:
       default: true
     exposedPort: 443
-    nodePort: 30001
     protocol: TCP
 
 additionalArguments:
@@ -34,7 +31,6 @@ additionalArguments:
 
 api:
   dashboard: true
-  # insecure: true
 
 ingressRoute:
   dashboard:
@@ -43,25 +39,6 @@ ingressRoute:
     entryPoints:
       - web
     middlewares: []
-
-# Creates a BasiAuth Middleware and Secret for the Dashboard Security
-
-extraObjects:
-  - apiVersion: v1
-    kind: Secret
-    metadata:
-      name: dashboard-auth-secret
-    type: kubernetes.io/basic-auth
-    stringData:
-      username: admin
-      password: "admin"
-  - apiVersion: traefik.io/v1alpha1
-    kind: Middleware
-    metadata:
-      name: dashboard-auth
-    spec:
-      basicAuth:
-        secret: dashboard-auth-secret
 
 logs:
   general:
@@ -93,11 +70,48 @@ resources:
 
 autoscaling:
   enabled: true
-  maxReplicas: 2
+  minReplicas: 2
+  maxReplicas: 10
   metrics:
-  - type: Resource
-    resource:
-      name: cpu
-      target:
-        type: Utilization
-        averageUtilization: 80
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 80
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+  scaleTargetRef:
+    apiVersion: argoproj.io/v1alpha1
+    kind: Rollout
+
+extraObjects:
+  - apiVersion: argoproj.io/v1alpha1
+    kind: Rollout
+    metadata:
+      name: "{{ template \"traefik.fullname\" . }}"
+      namespace: traefik
+    spec:
+      workloadRef:
+        apiVersion: apps/v1
+        kind: Deployment
+        name: "{{ template \"traefik.fullname\" . }}"
+      strategy:
+        canary:
+          steps:
+          - setWeight: 20
+          - pause:
+              duration: 2m
+          - setWeight: 40
+          - pause:
+              duration: 2m
+          - setWeight: 60
+          - pause:
+              duration: 1m
+          - setWeight: 80
+          - pause:
+              duration: 1m
