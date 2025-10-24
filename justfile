@@ -79,14 +79,14 @@ argocd-pw:
 		| sed 's/.*--//; s/ //g')" 'kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d'
 
 traefik:
-	@echo "Traefik will be available on localhost:9000/dashboard..."
+	@echo "Traefik will be available on localhost:8080/dashboard..."
 	gcloud secrets versions access latest --secret=ssh-private-key-secret-name > /tmp/ansible-key
 	@chmod 0600 /tmp/ansible-key
 	@ssh-add /tmp/ansible-key
-	@ssh -L 9000:localhost:9000 debian@"$(ansible-inventory -i ansible/inventories/inventory.gcp.yml --graph \
+	@ssh -L 8080:localhost:8080 debian@"$(ansible-inventory -i ansible/inventories/inventory.gcp.yml --graph \
 		| grep -A 1 "@_master" \
 		| tail -n 1 \
-		| sed 's/.*--//; s/ //g')" 'kubectl port-forward svc/traefik 9000:9000 -n traefik'
+		| sed 's/.*--//; s/ //g')" ' kubectl port-forward -n traefik svc/traefik 8080:80'
 
 cleanup:
   rm -f /tmp/ansible-key plan.out
