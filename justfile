@@ -51,13 +51,13 @@ grafana:
 	gcloud secrets versions access latest --secret=ssh-private-key-secret-name > /tmp/ansible-key
 	@chmod 0600 /tmp/ansible-key
 	@ssh-add /tmp/ansible-key
-	@ssh -L 3000:localhost:3000 debian@"$(ansible-inventory -i ansible/inventories/inventory.gcp.yml --graph \
+	@ssh -tL 3000:localhost:3000 debian@"$(ansible-inventory -i ansible/inventories/inventory.gcp.yml --graph \
 		| grep -A 1 "@_master" \
 		| tail -n 1 \
 		| sed 's/.*--//; s/ //g')" 'kubectl get secret -n monitoring kube-prometheus-stack-grafana -o jsonpath="{.data.admin-password}" | base64 -d && kubectl port-forward -n monitoring svc/kube-prometheus-stack-grafana 3000:80'
 
 grafana-pw:
-	@ssh -L 8080:localhost:8080 debian@"$(ansible-inventory -i ansible/inventories/inventory.gcp.yml --graph \
+	@ssh -tL 8080:localhost:8080 debian@"$(ansible-inventory -i ansible/inventories/inventory.gcp.yml --graph \
 		| grep -A 1 "@_master" \
 		| tail -n 1 \
 		| sed 's/.*--//; s/ //g')" 'kubectl -n argocd get secret kube-prometheus-stack-grafana -o jsonpath="{.data.admin-password}" | base64 -d'
@@ -67,13 +67,13 @@ argocd:
 	gcloud secrets versions access latest --secret=ssh-private-key-secret-name > /tmp/ansible-key
 	@chmod 0600 /tmp/ansible-key
 	@ssh-add /tmp/ansible-key
-	@ssh -L 8080:localhost:8080 debian@"$(ansible-inventory -i ansible/inventories/inventory.gcp.yml --graph \
+	@ssh -tL 8080:localhost:8080 debian@"$(ansible-inventory -i ansible/inventories/inventory.gcp.yml --graph \
 		| grep -A 1 "@_master" \
 		| tail -n 1 \
 		| sed 's/.*--//; s/ //g')" 'kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d && kubectl port-forward svc/argocd-server -n argocd 8080:443'
 
 argocd-pw:
-	@ssh -L 8080:localhost:8080 debian@"$(ansible-inventory -i ansible/inventories/inventory.gcp.yml --graph \
+	@ssh -L -t 8080:localhost:8080 debian@"$(ansible-inventory -i ansible/inventories/inventory.gcp.yml --graph \
 		| grep -A 1 "@_master" \
 		| tail -n 1 \
 		| sed 's/.*--//; s/ //g')" 'kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d'
@@ -83,7 +83,7 @@ traefik:
 	gcloud secrets versions access latest --secret=ssh-private-key-secret-name > /tmp/ansible-key
 	@chmod 0600 /tmp/ansible-key
 	@ssh-add /tmp/ansible-key
-	@ssh -L 8080:localhost:8080 debian@"$(ansible-inventory -i ansible/inventories/inventory.gcp.yml --graph \
+	@ssh -tL 8080:localhost:8080 debian@"$(ansible-inventory -i ansible/inventories/inventory.gcp.yml --graph \
 		| grep -A 1 "@_master" \
 		| tail -n 1 \
 		| sed 's/.*--//; s/ //g')" ' kubectl port-forward -n traefik svc/traefik 8080:80'
