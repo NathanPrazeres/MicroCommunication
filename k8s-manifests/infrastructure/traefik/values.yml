@@ -36,6 +36,10 @@ api:
   dashboard: true
   # insecure: true
 
+ping:
+  enabled: true
+  entryPoint: traefik 
+
 ingressRoute:
   dashboard:
     enabled: true
