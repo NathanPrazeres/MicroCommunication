@@ -41,7 +41,7 @@ ingressRoute:
     enabled: true
     matchRule: PathPrefix(`/dashboard`) || PathPrefix(`/api`)
     entryPoints:
-      - traefik
+      - web
     middlewares: []
 
 # Creates a BasiAuth Middleware and Secret for the Dashboard Security
