@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
       - name: user-service
-        image: your-registry/user-service:latest
+        image: nathanprazeres/agisit-user-service:latest
         ports:
         - containerPort: 3000
           name: http
@@ -36,7 +36,7 @@ spec:
           value: app
         - name: KEYCLOAK_CLIENT_ID
           value: user-service
-        - name: KEYCLOAK_CLIENT_SECRET 
+        - name: KEYCLOAK_CLIENT_SECRET
           valueFrom:
             secretKeyRef:
               name: keycloak-client-secret

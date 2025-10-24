@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
       - name: chat-service
-        image: your-registry/chat-service:latest
+        image: nathanprazeres/agisit-chat-service:latest
         ports:
         - containerPort: 5000
           name: http
