@@ -31,6 +31,8 @@ service:
 
 additionalArguments:
   - "--api.insecure=true"
+  - "--ping=true"
+  - "--ping.entryPoint=traefik"
 
 api:
   dashboard: true
