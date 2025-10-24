@@ -9,6 +9,6 @@ resources:
   - postgres.yml
   - redis.yml
   - keycloak.yml
-  - user-service.yml
-  - ui-service.yml
-  - chat-service.yml
+  # - user-service.yml
+  # - ui-service.yml
+  # - chat-service.yml
