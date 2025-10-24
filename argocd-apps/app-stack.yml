@@ -18,7 +18,7 @@ spec:
     path: microservice_chat
     directory:
       recurse: true
-      include: '{apps/*.yml,apps/*.yaml, *.yml}'
+      include: '**/*.{yml,yaml}'
   destination:
     server: https://kubernetes.default.svc
     namespace: app
