@@ -4,6 +4,30 @@
   <h3>agisit25-g20</h3>
 </div>
 
+## Bootstrapping
+
+To bootstrap our app, we made some convenient commands that help you quickly get started.
+
+- First off, run `just login`; this will redirect you to Google Cloud's login page, where you can authorize the CLI.
+
+- Then, use `just setup_project <project_name>` to set the GCP project gcloud will manage the rest.
+
+- Important Note: Remember to have Compute Engine API and Secret Manager API enabled in your Console.
+
+- Also remember to download your service account into `~/service-account.json` so Ansible and Terraform can use them.
+
+- To provision the VMs, run `just provision`.
+
+- After it finishes executing, to turn the VMs into a Kubernetes cluster run `just configure`.
+
+- And once it finishes (it takes a while), everything is set up!
+
+- Now, if you want to check your cluster's status, run `just argocd-pw` to print your ArgoCD's password.
+
+- To access the ArgoCD's dashboard run, `just argocd`, and use `admin` as the username and the password that was printed in the previous command.
+
+- To access grafana's dashboard, run `just grafana`, and use `admin` as the username and `prom-operator` as the password.
+
 ## Development
 
 For development, the principle was to get the templates and setup **right**.
