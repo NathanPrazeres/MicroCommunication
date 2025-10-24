@@ -1,6 +1,6 @@
 ---
 deployment:
-  replicas: 0  # Managed by Rollout
+  replicas: 1  
 
 service:
   type: LoadBalancer
@@ -85,30 +85,3 @@ autoscaling:
         target:
           type: Utilization
           averageUtilization: 80
-
-extraObjects:
-  - apiVersion: argoproj.io/v1alpha1
-    kind: Rollout
-    metadata:
-      name: "{{ template \"traefik.fullname\" . }}"
-      namespace: traefik
-    spec:
-      workloadRef:
-        apiVersion: apps/v1
-        kind: Deployment
-        name: "{{ template \"traefik.fullname\" . }}"
-      strategy:
-        canary:
-          steps:
-          - setWeight: 20
-          - pause:
-              duration: 2m
-          - setWeight: 40
-          - pause:
-              duration: 2m
-          - setWeight: 60
-          - pause:
-              duration: 1m
-          - setWeight: 80
-          - pause:
-              duration: 1m
