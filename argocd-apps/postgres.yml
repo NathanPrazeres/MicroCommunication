@@ -21,7 +21,7 @@ spec:
         valueFiles:
           - $values/k8s-manifests/platform/postgres/values.yml
     - repoURL: git@gitlab.rnl.tecnico.ulisboa.pt:agisit/agisit25-g20.git
-      targetRevision: 4-microservice-structure
+      targetRevision: dev
       ref: values
   destination:
     server: https://kubernetes.default.svc

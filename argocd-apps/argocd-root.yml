@@ -10,7 +10,7 @@ spec:
   project: default
   source:
     repoURL: https://gitlab.rnl.tecnico.ulisboa.pt/agisit/agisit25-g20
-    targetRevision: 4-microservice-structure
+    targetRevision: dev
     path: argocd-apps
     directory:
       recurse: true

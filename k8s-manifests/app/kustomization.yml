@@ -4,6 +4,6 @@ kind: Kustomization
 resources:
   - ingress.yml
   #- middleware.yml
-  - apps/chat-service
-  - apps/ui-service
-  - apps/user-service
+  - services/chat-service
+  - services/ui-service
+  - services/user-service

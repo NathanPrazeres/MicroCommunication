@@ -1,4 +1,0 @@
----
-gcp_csi_driver_version: "stable"
-gcp_csi_namespace: "gcp-compute-persistent-disk-csi-driver"
-gcp_csi_storageclass_name: "standard"

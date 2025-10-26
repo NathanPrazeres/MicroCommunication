@@ -14,11 +14,8 @@ spec:
   project: default
   source:
     repoURL: git@gitlab.rnl.tecnico.ulisboa.pt:agisit/agisit25-g20.git
-    targetRevision: 4-microservice-structure
-    path: microservice_chat
-    # directory:
-    #   recurse: true
-    #   include: '**/*.{yml,yaml}'
+    targetRevision: dev
+    path: k8s-manifest/app
   destination:
     server: https://kubernetes.default.svc
     namespace: app

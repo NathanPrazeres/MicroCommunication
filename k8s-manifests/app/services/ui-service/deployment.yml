@@ -18,13 +18,13 @@ spec:
     spec:
       containers:
       - name: ui-service
-        image: nathanprazeres/agisit-ui-service:latest
+        image: nathanprazeres/agisit-ui-service-test:latest
         ports:
         - containerPort: 4173
           name: http
         volumeMounts:
         - name: config
-          mountPath: /app/dist/config.json
+          mountPath: /usr/share/nginx/html/config.json
           subPath: config.json
           readOnly: true
         livenessProbe:
