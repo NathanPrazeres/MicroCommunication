@@ -31,15 +31,15 @@ spec:
         - name: REDIS_HOST
           value: redis-service
         - name: REDIS_PORT
-          value: 6379
+          value: "6379"
         - name: USER_HOST
           value: user-service
         - name: USER_PORT
-          value: 3000
+          value: "3000"
         - name: AUTH_HOST
           value: keycloak
         - name: AUTH_PORT
-          value: 8080
+          value: "8080"
         - name: AUTH_REALM
           value: app
         livenessProbe:
