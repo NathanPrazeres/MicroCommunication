@@ -23,11 +23,31 @@ spec:
         - containerPort: 5000
           name: http
         env:
-        - name: DATABASE_URL
+        - name: DB_HOST
           valueFrom:
             secretKeyRef:
-              name: chat-service-secrets
-              key: DATABASE_URL
+              name: chat-message-secret
+              key: postgres-host-secret
+        - name: DB_PORT
+          valueFrom:
+            secretKeyRef:
+              name: chat-message-secret
+              key: postgres-port-secret
+        - name: DB_NAME
+          valueFrom:
+            secretKeyRef:
+              name: chat-message-secret
+              key: postgres-name-secret
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: chat-message-secret
+              key: postgres-user-secret
+        - name: DB_PASS
+          valueFrom:
+            secretKeyRef:
+              name: chat-message-secret
+              key: postgres-pass-secret
         - name: REDIS_HOST
           value: redis-service
         - name: REDIS_PORT

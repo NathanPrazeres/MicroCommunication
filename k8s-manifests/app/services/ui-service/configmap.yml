@@ -7,10 +7,12 @@ metadata:
 data:
   config.json: |
     {
-      "VITE_CHAT_HOST": "chat-service.app.svc.cluster.local",
+      "VITE_CHAT_HOST": "chat-service",
       "VITE_CHAT_PORT": "3001",
-      "VITE_AUTH_HOST": "keycloak.app.svc.cluster.local",
+      "VITE_AUTH_HOST": "keycloak",
       "VITE_AUTH_PORT": "8080",
-      "VITE_USER_HOST": "user-service.app.svc.cluster.local",
-      "VITE_USER_PORT": "3000"
+      "VITE_USER_HOST": "user-service",
+      "VITE_USER_PORT": "3000",
+      "VITE_KEYCLOAK_REALM": "app",
+      "VITE_KEYCLOAK_CLIENT_ID": "ui-service"
     }
