@@ -15,7 +15,7 @@ spec:
   source:
     repoURL: git@gitlab.rnl.tecnico.ulisboa.pt:agisit/agisit25-g20.git
     targetRevision: dev
-    path: k8s-manifest/app
+    path: k8s-manifests/app
   destination:
     server: https://kubernetes.default.svc
     namespace: app
