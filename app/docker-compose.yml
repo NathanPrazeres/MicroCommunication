@@ -3,11 +3,12 @@ services:
 
   # UI Service - React microservice
   ui-service:
-    build:
-      context: ./ui
+    image: nathanprazeres/agisit-ui-service-test:latest
     container_name: ui-service
     ports:
       - 4173:4173
+    volumes:
+      - ./config.json:/app/dist/config.json:ro
     depends_on:
       keycloak:
         condition: service_started
@@ -17,8 +18,7 @@ services:
 
   # Chat Service - Python/FastAPI microservice
   chat-service:
-    build:
-      context: ./chat
+    image: nathanprazeres/agisit-chat-service:latest
     container_name: chat-service
     environment:
       PG_HOST: postgres
@@ -50,8 +50,7 @@ services:
 
   # User Service - Rust/Axum microservice
   user-service:
-    build:
-      context: ./user
+    image: nathanprazeres/agisit-user-service:latest
     container_name: user-service
     environment:
       # Database
