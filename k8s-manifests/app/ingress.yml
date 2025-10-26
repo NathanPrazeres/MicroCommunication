@@ -19,3 +19,10 @@ spec:
                 name: ui-service
                 port:
                   number: 4173
+          - path: /realms
+            pathType: Prefix
+            backend:
+              service:
+                name: keycloak
+                port:
+                  number: 8080
