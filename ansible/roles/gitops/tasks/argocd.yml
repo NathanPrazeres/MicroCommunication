@@ -218,7 +218,7 @@
         project: default
         source:
           repoURL: "git@gitlab.rnl.tecnico.ulisboa.pt:{{ git_repo_org }}/{{ argocd_repo_name }}.git"
-          targetRevision: 4-microservice-structure
+          targetRevision: dev
           path: "{{ argocd_apps_path | default('argocd-apps') }}"
         destination:
           server: https://kubernetes.default.svc
