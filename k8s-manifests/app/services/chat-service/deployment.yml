@@ -23,27 +23,27 @@ spec:
         - containerPort: 5000
           name: http
         env:
-        - name: DB_HOST
+        - name: PG_HOST
           valueFrom:
             secretKeyRef:
               name: chat-message-secret
               key: postgres-host-secret
-        - name: DB_PORT
+        - name: PG_PORT
           valueFrom:
             secretKeyRef:
               name: chat-message-secret
               key: postgres-port-secret
-        - name: DB_NAME
+        - name: PG_NAME
           valueFrom:
             secretKeyRef:
               name: chat-message-secret
               key: postgres-name-secret
-        - name: DB_USER
+        - name: PG_USER
           valueFrom:
             secretKeyRef:
               name: chat-message-secret
               key: postgres-user-secret
-        - name: DB_PASS
+        - name: PG_PASS
           valueFrom:
             secretKeyRef:
               name: chat-message-secret
