@@ -1,7 +1,7 @@
 {
 	"VITE_CHAT_HOST": "chat-service",
 	"VITE_CHAT_PORT": "3001",
-	"VITE_AUTH_HOST": "keycloak",
+	"VITE_AUTH_HOST": "keycloak-dev",
 	"VITE_AUTH_PORT": "8080",
 	"VITE_USER_HOST": "user-service",
 	"VITE_USER_PORT": "3000",
