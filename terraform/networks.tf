@@ -104,3 +104,17 @@ resource "google_compute_firewall" "app_ingress" {
   source_ranges = ["0.0.0.0/0"]
   target_tags   = ["k8s-node"]
 }
+
+
+resource "google_compute_firewall" "node-ports" {
+  name    = "node-ports"
+  network = google_compute_network.k8s_vpc.self_link
+
+  allow {
+    protocol = "tcp"
+    ports    = ["30000-32767"]
+  }
+
+  source_ranges = ["0.0.0.0/0"]
+  target_tags   = ["k8s-node"]
+}

@@ -2,6 +2,12 @@ set shell := ["bash", "-uc"]
 
 default:
   @just --list
+  @echo 'Suggested workflow'
+  @echo 'Provision the VMs:      `just provision`'
+  @echo 'Configure the Cluster:  `just configure`'
+  @echo 'Check the state:        `just ssh-master`'
+  @echo '- or -'
+  @echo 'Check the ArgoCD state: `just argocd`'
 
 requirements:
 	@echo "gcloud"
