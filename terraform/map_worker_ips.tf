@@ -18,7 +18,7 @@ resource "null_resource" "inject_configs" {
         ../k8s-manifests/platform/keycloak/configmap.yml
 
       # Update UI ConfigMap
-      sed -i 's|"VITE_AUTH_HOST": "http://[^"]*"|"VITE_AUTH_HOST": "http://${local.first_worker_ip}"|' \
+      sed -i 's|"VITE_AUTH_HOST": "[^"]*"|"VITE_AUTH_HOST": "${local.first_worker_ip}"|' \
         ../k8s-manifests/app/services/ui-service/configmap.yml
       sed -i 's|"VITE_AUTH_PORT": "[^"]*"|"VITE_AUTH_PORT": "${local.traefik_nodeport}"|' \
         ../k8s-manifests/app/services/ui-service/configmap.yml
