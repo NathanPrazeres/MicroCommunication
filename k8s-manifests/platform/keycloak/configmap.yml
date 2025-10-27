@@ -21,7 +21,7 @@ data:
       "sslRequired": "none",
 
       "attributes": {
-        "frontendUrl": "http://34.175.51.198:32450",
+        "frontendUrl": "http://34.175.115.16:30080",
         "acr.loa.map": "{}",
 
         "cibaBackchannelTokenDeliveryMode": "poll",
