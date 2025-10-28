@@ -43,9 +43,14 @@ configure:
 [working-directory: 'ansible']
 hosts:
 	@echo 'Echoing all hosts...'
+	ssh-add -D
+	gcloud secrets versions access latest --secret=ssh-private-key-secret-name > /tmp/ansible-key
+	@chmod 0600 /tmp/ansible-key
 	ansible-inventory -i inventories/inventory.gcp.yml --graph
 
 ssh-master:
+	gcloud secrets versions access latest --secret=ssh-private-key-secret-name > /tmp/ansible-key
+	@chmod 0600 /tmp/ansible-key
 	@ssh-add /tmp/ansible-key
 	@ssh debian@"$(ansible-inventory -i ansible/inventories/inventory.gcp.yml --graph \
 		| grep -A 1 "@_master" \
@@ -79,7 +84,7 @@ argocd:
 		| sed 's/.*--//; s/ //g')" 'kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d && kubectl port-forward svc/argocd-server -n argocd 8080:443'
 
 argocd-pw:
-	@ssh -L -t 8080:localhost:8080 debian@"$(ansible-inventory -i ansible/inventories/inventory.gcp.yml --graph \
+	@ssh -tL 8080:localhost:8080 debian@"$(ansible-inventory -i ansible/inventories/inventory.gcp.yml --graph \
 		| grep -A 1 "@_master" \
 		| tail -n 1 \
 		| sed 's/.*--//; s/ //g')" 'kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d'
