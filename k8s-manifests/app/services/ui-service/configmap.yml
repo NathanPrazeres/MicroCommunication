@@ -9,7 +9,7 @@ data:
     {
       "VITE_CHAT_HOST": "chat-service",
       "VITE_CHAT_PORT": "3001",
-      "VITE_AUTH_HOST": "34.175.24.69",
+      "VITE_AUTH_HOST": "34.175.144.205",
       "VITE_AUTH_PORT": "30080",
       "VITE_USER_HOST": "user-service",
       "VITE_USER_PORT": "3000",
