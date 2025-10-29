@@ -85,7 +85,6 @@ data:
             "post.logout.redirect.uris": "+",
             "oauth2.device.authorization.grant.enabled": "false",
             "oidc.ciba.grant.enabled": "false",
-            "pkce.code.challenge.method": "S256"
           }
         }
       ],
