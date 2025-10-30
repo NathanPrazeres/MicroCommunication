@@ -133,7 +133,7 @@ async def create_room(req: CreateRoomRequest = Body(...), claims: dict = Depends
         description=req.description
     )
 
-    for uid in req.participants:
+    for uid in (req.participants or []) + [user_id]:
         await redis_client.publish(f"user:{uid}", RoomControlMessage(room_id=room_id, status="added").model_dump_json())
 
     return CreateRoomResponse(room_id=room_id)
