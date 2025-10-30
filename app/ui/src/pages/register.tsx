@@ -17,10 +17,9 @@ export const RegisterPage = () => {
     const createUserProfile = async () => {
       try {
         await UsersAPI.createUser(token);
+      } finally {
+        // If error: user already exists (that's fine)
         // Redirect to profile page
-        navigate("/profile");
-      } catch (error) {
-        console.error("Failed to create user profile:", error);
         navigate("/profile");
       }
     };

@@ -16,6 +16,7 @@ export const Navbar = () => {
   const location = useLocation();
 
   const signOut = () => {
+    setRoom(null);
     logOut();
     goBack();
   };
@@ -27,6 +28,7 @@ export const Navbar = () => {
   };
 
   const goTo = (endpoint: string) => {
+    setRoom(null);
     if (location.pathname == endpoint) return;
     navigate(endpoint);
   };

@@ -24,17 +24,6 @@ export const ContactsPage = () => {
 	const [newContactUsername, setNewContactUsername] = useState("");
 	const [addingContact, setAddingContact] = useState(false);
 
-	useEffect(() => {
-		if (token) {
-			try {
-				const payload = JSON.parse(atob(token.split('.')[1]));
-				console.log("JWT Token Payload:", payload);
-			} catch (e) {
-				console.error("Failed to decode token:", e);
-			}
-		}
-	}, [token]);
-
 	const fetchAll = useCallback(async () => {
 		if (!token) return;
 		setLoading(true);
