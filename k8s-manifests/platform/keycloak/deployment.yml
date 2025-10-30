@@ -21,6 +21,7 @@ spec:
           image: quay.io/keycloak/keycloak:25.0
           args:
             - start-dev
+            - --verbose
             - --import-realm
             - --health-enabled=true
           env:
