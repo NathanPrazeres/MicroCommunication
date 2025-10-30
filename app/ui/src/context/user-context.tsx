@@ -17,7 +17,34 @@ const UserContext = createContext<UserContextType | undefined>(undefined);
 export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 	const { keycloak, initialized } = useKeycloak();
 	const [user, setUser] = useState<UserDto | null>(null);
+	const [token, setToken] = useState<string | null>(null);
 	const [loading, setLoading] = useState(true);
+
+	// Update token whenever keycloak token changes
+	useEffect(() => {
+		if (initialized && keycloak.token) {
+			setToken(keycloak.token);
+		} else {
+			setToken(null);
+		}
+	}, [keycloak.token, initialized]);
+
+	// Listen for token refresh events
+	useEffect(() => {
+		if (!initialized) return;
+
+		const onTokensUpdated = () => {
+			setToken(keycloak.token ?? null);
+		};
+
+		keycloak.onAuthRefreshSuccess = onTokensUpdated;
+		keycloak.onAuthSuccess = onTokensUpdated;
+
+		return () => {
+			keycloak.onAuthRefreshSuccess = undefined;
+			keycloak.onAuthSuccess = undefined;
+		};
+	}, [keycloak, initialized]);
 
 	useEffect(() => {
 		if (!initialized) return;
@@ -25,11 +52,13 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
 		const fetchUser = async () => {
 			if (keycloak.authenticated && keycloak.token) {
 				try {
-					setUser(await UsersAPI.getCurrentUser(keycloak.token));
+					const userData = await UsersAPI.getCurrentUser(keycloak.token);
+					setUser(userData);
 				} catch {
 					// User doesn't exist
 					try {
-						setUser(await UsersAPI.createUser(keycloak.token));
+						const newUser = await UsersAPI.createUser(keycloak.token);
+						setUser(newUser);
 					} catch (error) {
 						console.error("Failed to fetch user:", error);
 						setUser(null);
@@ -55,7 +84,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
 			value={{
 				user,
 				setUser,
-				token: keycloak.token || null,
+				token,
 				loading,
 				logOut,
 			}}
