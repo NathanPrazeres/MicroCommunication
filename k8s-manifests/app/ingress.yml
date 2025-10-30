@@ -19,6 +19,57 @@ spec:
                 name: keycloak
                 port:
                   number: 8080
+          - path: /resources
+            pathType: Prefix
+            backend:
+              service:
+                name: keycloak
+                port:
+                  number: 8080
+          - path: /js
+            pathType: Prefix
+            backend:
+              service:
+                name: keycloak
+                port:
+                  number: 8080
+          - path: /robots.txt
+            pathType: Exact
+            backend:
+              service:
+                name: keycloak
+                port:
+                  number: 8080
+
+          - path: /api/v1/contacts
+            pathType: Prefix
+            backend:
+              service:
+                name: user-service
+                port:
+                  number: 3000
+          - path: /api/v1/users
+            pathType: Prefix
+            backend:
+              service:
+                name: user-service
+                port:
+                  number: 3000
+          - path: /api/v1/rooms
+            pathType: Prefix
+            backend:
+              service:
+                name: chat-service
+                port:
+                  number: 5000
+          - path: /api/v1/ws
+            pathType: Prefix
+            backend:
+              service:
+                name: chat-service
+                port:
+                  number: 5000
+
           - path: /
             pathType: Prefix
             backend:

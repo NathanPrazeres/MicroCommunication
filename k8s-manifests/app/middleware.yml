@@ -20,7 +20,7 @@ spec:
       - OPTIONS
     accessControlAllowOriginList:
       - "http://localhost:3000"
-      - "http://localhost:5173"
+      - "http://localhost:4173"
       - "http://app.local"
     accessControlMaxAge: 100
     addVaryHeader: true
