@@ -20,8 +20,16 @@ data:
       "failureFactor": 5,
       "sslRequired": "none",
 
+      "browserSecurityHeaders": {
+        "contentSecurityPolicy": "frame-src 'self'; frame-ancestors 'self'; object-src 'none';",
+        "xContentTypeOptions": "nosniff",
+        "xRobotsTag": "none",
+        "xFrameOptions": "SAMEORIGIN",
+        "strictTransportSecurity": "max-age=0; includeSubDomains"
+      },
+
       "attributes": {
-        "frontendUrl": "http://34.175.24.69:30080",
+        "frontendUrl": "http://34.175.160.31:30080",
         "acr.loa.map": "{}",
 
         "cibaBackchannelTokenDeliveryMode": "poll",
