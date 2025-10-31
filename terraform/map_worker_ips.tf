@@ -20,13 +20,13 @@ resource "null_resource" "inject_configs" {
         ../k8s-manifests/app/services/ui-service/configmap.yml
       sed -i 's|"VITE_AUTH_PORT": "[^"]*"|"VITE_AUTH_PORT": "${local.traefik_nodeport}"|' \
         ../k8s-manifests/app/services/ui-service/configmap.yml
-      sed -i 's|"VITE_AUTH_HOST": "[^"]*"|"VITE_CHAT_HOST": "${local.first_worker_ip}"|' \
+      sed -i 's|"VITE_CHAT_HOST": "[^"]*"|"VITE_CHAT_HOST": "${local.first_worker_ip}"|' \
         ../k8s-manifests/app/services/ui-service/configmap.yml
-      sed -i 's|"VITE_AUTH_PORT": "[^"]*"|"VITE_CHAT_PORT": "${local.traefik_nodeport}"|' \
+      sed -i 's|"VITE_CHAT_PORT": "[^"]*"|"VITE_CHAT_PORT": "${local.traefik_nodeport}"|' \
         ../k8s-manifests/app/services/ui-service/configmap.yml
-      sed -i 's|"VITE_AUTH_HOST": "[^"]*"|"VITE_USER_HOST": "${local.first_worker_ip}"|' \
+      sed -i 's|"VITE_USER_HOST": "[^"]*"|"VITE_USER_HOST": "${local.first_worker_ip}"|' \
         ../k8s-manifests/app/services/ui-service/configmap.yml
-      sed -i 's|"VITE_AUTH_PORT": "[^"]*"|"VITE_USER_PORT": "${local.traefik_nodeport}"|' \
+      sed -i 's|"VITE_USER_PORT": "[^"]*"|"VITE_USER_PORT": "${local.traefik_nodeport}"|' \
         ../k8s-manifests/app/services/ui-service/configmap.yml
     EOT
   }
