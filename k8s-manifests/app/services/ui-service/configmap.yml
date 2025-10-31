@@ -9,8 +9,8 @@ data:
     {
       "VITE_CHAT_HOST": "chat-service",
       "VITE_CHAT_PORT": "3001",
-      "VITE_AUTH_HOST": "34.175.144.205",
-      "VITE_AUTH_PORT": "30080",
+      "VITE_CHAT_HOST": "34.175.122.146",
+      "VITE_CHAT_PORT": "30080",
       "VITE_USER_HOST": "user-service",
       "VITE_USER_PORT": "3000",
       "VITE_KEYCLOAK_REALM": "app",
