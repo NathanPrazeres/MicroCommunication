@@ -14,7 +14,8 @@ resource "null_resource" "inject_configs" {
 
       sed -i 's|"frontendUrl": "[^"]*"|"frontendUrl": "http://${local.first_worker_ip}:${local.traefik_nodeport}"|' \
         ../k8s-manifests/platform/keycloak/configmap.yml
-
+      sed -i 's|"http://[0-9.]*:30080/\*"|"http://${local.first_worker_ip}:${local.traefik_nodeport}/*"|' \
+        ../k8s-manifests/platform/keycloak/configmap.yml
 
       sed -i 's|"VITE_AUTH_HOST": "[^"]*"|"VITE_AUTH_HOST": "${local.first_worker_ip}"|' \
         ../k8s-manifests/app/services/ui-service/configmap.yml
