@@ -29,7 +29,7 @@ data:
       },
 
       "attributes": {
-        "frontendUrl": "http://34.175.160.31:30080",
+        "frontendUrl": "http://34.175.196.239:30080",
         "acr.loa.map": "{}",
 
         "cibaBackchannelTokenDeliveryMode": "poll",
