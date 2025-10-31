@@ -49,6 +49,17 @@ spec:
                   name: keycloak-secrets
                   key: db-password
 
+            - name: KC_HOSTNAME_STRICT
+              value: "false"
+            - name: KC_HOSTNAME_STRICT_HTTPS
+              value: "false"
+            - name: KC_PROXY
+              value: "edge"
+            - name: KC_HTTP_ENABLED
+              value: "true"
+            - name: KC_PROXY_HEADERS
+              value: "xforwarded"
+
             - name: KC_HTTP_MANAGEMENT_PORT
               value: "9000"
             - name: KC_HEALTH_ENABLED
