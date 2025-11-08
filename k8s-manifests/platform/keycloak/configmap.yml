@@ -8,16 +8,13 @@ data:
     {
       "realm": "app",
       "enabled": true,
-      "displayName": "Microservice Chat",
       "registrationAllowed": true,
-      "rememberMe": true,
+      "registrationEmailAsUsername": false,
+      "rememberMe": false,
+      "verifyEmail": false,
       "loginWithEmailAllowed": true,
       "duplicateEmailsAllowed": false,
-      "resetPasswordAllowed": false,
-      "editUsernameAllowed": false,
-      "bruteForceProtected": true,
-      "permanentLockout": false,
-      "failureFactor": 5,
+      "resetPasswordAllowed": true,
       "sslRequired": "none",
 
       "clients": [
@@ -55,52 +52,20 @@ data:
         },
         {
           "clientId": "ui-service",
+          "name": "Frontend Application",
           "enabled": true,
           "publicClient": true,
           "standardFlowEnabled": true,
-          "implicitFlowEnabled": false,
-          "directAccessGrantsEnabled": true,
-          "protocol": "openid-connect",
+          "directAccessGrantsEnabled": false,
           "redirectUris": [
-            "*"
+            "http://ui-service:4173/*",
+            "http://localhost:4173/*",
+            "http://34.175.160.31:30080/*"
           ],
           "webOrigins": [
             "*"
           ],
-          "attributes": {
-            "post.logout.redirect.uris": "+",
-            "oauth2.device.authorization.grant.enabled": "false",
-            "oidc.ciba.grant.enabled": "false"
-          }
+          "baseUrl": "http://ui-service:4173"
         }
-      ],
-      "users": [
-        {
-          "username": "admin",
-          "enabled": true,
-          "emailVerified": true,
-          "credentials": [
-            {
-              "type": "password",
-              "value": "admin"
-            }
-          ],
-          "realmRoles": [
-            "admin"
-          ]
-        }
-      ],
-      "roles": {
-        "realm": [
-          {
-            "name": "admin"
-          },
-          {
-            "name": "user"
-          }
-        ]
-      },
-      "defaultRoles": [
-        "user"
       ]
     }
