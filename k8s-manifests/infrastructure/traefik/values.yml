@@ -22,6 +22,22 @@ ports:
     nodePort: 30080
     protocol: TCP
 
+  websecure:
+    port: 8443
+    expose:
+      default: true
+    exposedPort: 443
+    nodePort: 30443
+    protocol: TCP
+    tls:
+      enabled: true
+
+# Secret gets created dynamically
+tlsStore:
+  default:
+    defaultCertificate:
+      secretName: traefik-tls
+
 additionalArguments:
   - "--api.insecure=true"
   - "--ping=true"
@@ -42,25 +58,6 @@ ingressRoute:
     entryPoints:
       - web
     middlewares: []
-
-# Creates a BasiAuth Middleware and Secret for the Dashboard Security
-
-# extraObjects:
-#   - apiVersion: v1
-#     kind: Secret
-#     metadata:
-#       name: dashboard-auth-secret
-#     type: kubernetes.io/basic-auth
-#     stringData:
-#       username: admin
-#       password: "admin"
-#   - apiVersion: traefik.io/v1alpha1
-#     kind: Middleware
-#     metadata:
-#       name: dashboard-auth
-#     spec:
-#       basicAuth:
-#         secret: dashboard-auth-secret
 
 logs:
   general:

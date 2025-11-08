@@ -1,0 +1,58 @@
+---
+- name: Create certs directory
+  file:
+    path: /home/{{ ansible_user }}/certs
+    state: directory
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: '0755'
+
+- name: Ensure traefik namespace exists (before ArgoCD)
+  kubernetes.core.k8s:
+    name: traefik
+    api_version: v1
+    kind: Namespace
+    state: present
+
+- name: Ensure app namespace exists (before ArgoCD)
+  kubernetes.core.k8s:
+    name: app
+    api_version: v1
+    kind: Namespace
+    state: present
+
+- name: Get master external IP
+  shell: curl -s ifconfig.me
+  register: master_external_ip
+  changed_when: false
+
+- name: Display detected master IP
+  debug:
+    msg: "Master external IP detected: {{ master_external_ip.stdout }}"
+
+- name: Generate self-signed certificate
+  shell: |
+    openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+      -keyout /home/{{ ansible_user }}/certs/tls.key \
+      -out /home/{{ ansible_user }}/certs/tls.crt \
+      -subj "/CN={{ master_external_ip.stdout }}" \
+      -addext "subjectAltName=IP:{{ master_external_ip.stdout }}"
+  args:
+    creates: /home/{{ ansible_user }}/certs/tls.crt
+
+- name: Delete old TLS secret if exists
+  shell: kubectl delete secret traefik-tls -n traefik --ignore-not-found=true
+
+- name: Create TLS secret in traefik namespace
+  shell: >
+    kubectl create secret tls traefik-tls -n traefik
+    --cert=/home/{{ ansible_user }}/certs/tls.crt
+    --key=/home/{{ ansible_user }}/certs/tls.key
+    --dry-run=client -o yaml | kubectl apply -f -
+
+- name: Prevent ArgoCD from deleting the TLS secrets
+  shell: |
+    kubectl annotate secret traefik-tls -n traefik \
+      argocd.argoproj.io/compare-options=IgnoreExtraneous \
+      argocd.argoproj.io/sync-options=Prune=false \
+      --overwrite

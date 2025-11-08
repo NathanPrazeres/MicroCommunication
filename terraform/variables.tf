@@ -1,7 +1,7 @@
 variable "GCP_PROJECT_ID" {
   type        = string
   description = "The project ID found in the GCP dashboard page under the project's name."
-  default     = "agisit-g20"
+  default     = "agisit-g20-103145"
 }
 
 variable "GCP_MACHINE_TYPE" {

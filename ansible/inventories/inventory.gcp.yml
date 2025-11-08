@@ -2,7 +2,7 @@ plugin: google.cloud.gcp_compute
 zones: 
   - europe-southwest1-a
 projects:
-  - agisit-g20
+  - agisit-g20-103145
 auth_kind: serviceaccount
 service_account_file: ~/service-account.json
 filters:

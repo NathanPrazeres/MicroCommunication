@@ -5,7 +5,8 @@ metadata:
   name: app-ingress
   namespace: app
   annotations:
-    traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
     argocd.argoproj.io/sync-wave: "2"
 spec:
   ingressClassName: traefik

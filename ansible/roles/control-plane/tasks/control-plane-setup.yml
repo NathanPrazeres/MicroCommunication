@@ -46,7 +46,7 @@
     path: "/root/.kube"
     state: directory
     mode: 0755
-    owner: "{{ ansible_user }}"
+    owner: "root"
 
 - name: Copy kubeconfig to debian’s home
   copy:

@@ -27,6 +27,8 @@
   changed_when: false
   register: kubernetes_join_command_result
 
+- include_tasks: ssl_certificate.yml
+
 # - name: Get CA cert hash
 #   shell: >
 #     openssl x509 -pubkey -in /etc/kubernetes/pki/ca.crt |

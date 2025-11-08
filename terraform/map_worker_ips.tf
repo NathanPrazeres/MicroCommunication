@@ -1,7 +1,7 @@
 locals {
   depends_on       = google_compute_instance.kubernetes_worker_node
   first_worker_ip  = google_compute_instance.kubernetes_worker_node[0].network_interface[0].access_config[0].nat_ip
-  traefik_nodeport = "30080"
+  traefik_nodeport = "30443"
 }
 
 resource "null_resource" "inject_configs" {
