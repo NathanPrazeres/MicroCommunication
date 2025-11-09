@@ -2,7 +2,7 @@ import Keycloak from 'keycloak-js';
 import { getAuthService, getKeycloakClientId, getKeycloakRealm } from '@/config';
 
 const keycloakConfig = {
-  url: `http://${getAuthService()}`,
+  url: `https://${getAuthService()}`, // NOTE: for internal testing switch to http
   realm: getKeycloakRealm(),
   clientId: getKeycloakClientId(),
 };

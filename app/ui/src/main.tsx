@@ -27,10 +27,7 @@ loadConfig().then(() => {
       <StrictMode>
         <ReactKeycloakProvider
           authClient={keycloak}
-		      initOptions={{
-            checkLoginIframe: false,
-            enableLogging: true,
-          }}
+		      initOptions={{ enableLogging: true }}
         >
           <ThemeProvider defaultTheme='system' storageKey='vite-ui-theme'>
             <UserProvider>
