@@ -58,12 +58,12 @@ data:
           "standardFlowEnabled": true,
           "directAccessGrantsEnabled": false,
           "redirectUris": [
-            "https://34.175.196.239:30443/*"
+            "https://34.175.7.70:30443/*"
           ],
           "webOrigins": [
             "*"
           ],
-          "baseUrl": "https://34.175.196.239:30443/"
+          "baseUrl": "https://34.175.7.70:30443/"
         }
       ]
     }
