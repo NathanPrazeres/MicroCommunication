@@ -3,7 +3,7 @@ import type { RoomDto, MessageDto, RoomUserDto } from "@/models/dto";
 import { normalizeMessageDto, normalizeRoomDto } from "@/models/normalize";
 
 export class RoomsAPI {
-  private static baseUrl: string = `http://${getChatService()}/api/v1/rooms`;
+  private static baseUrl: string = `https://${getChatService()}/api/v1/rooms`; // NOTE: change to http for local testing
 
   private static getHeaders(token: string) {
     return {

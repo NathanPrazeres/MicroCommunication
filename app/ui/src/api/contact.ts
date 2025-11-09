@@ -3,7 +3,7 @@ import type { UserDto } from "@/models/dto";
 import { normalizeUserDto } from "@/models/normalize";
 
 export class ContactsAPI {
-	private static baseUrl: string = `http://${getUserService()}/api/v1/contacts`;
+	private static baseUrl: string = `https://${getUserService()}/api/v1/contacts`; // NOTE: change to http for local testing
 
 	private static getHeaders(token: string) {
 		return {
