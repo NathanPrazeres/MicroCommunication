@@ -62,14 +62,14 @@ spec:
               service:
                 name: chat-service
                 port:
-                  number: 5000
+                  number: 3001
           - path: /api/v1/ws
             pathType: Prefix
             backend:
               service:
                 name: chat-service
                 port:
-                  number: 5000
+                  number: 3001
 
           - path: /
             pathType: Prefix
