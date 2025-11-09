@@ -58,14 +58,12 @@ data:
           "standardFlowEnabled": true,
           "directAccessGrantsEnabled": false,
           "redirectUris": [
-            "http://ui-service:4173/*",
-            "http://localhost:4173/*",
-            "http://34.175.160.31:30080/*"
+            "https://34.175.160.31:30080/*",
           ],
           "webOrigins": [
             "*"
           ],
-          "baseUrl": "http://ui-service:4173"
+          "baseUrl": "https://34.175.160.31:30080/"
         }
       ]
     }
