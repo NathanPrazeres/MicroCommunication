@@ -31,7 +31,8 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
 	const WS_URL = useMemo(() => {
 		if (!token || !shouldConnect) return null;
-		return `ws://${getChatService()}/api/v1/ws?token=${encodeURIComponent(token)}`;
+		const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+		return `${protocol}://${getChatService()}/api/v1/ws?token=${encodeURIComponent(token)}`;
 	}, [token, shouldConnect]);
 
 	const { sendJsonMessage, lastJsonMessage, readyState } = useWebSocket(WS_URL, {
