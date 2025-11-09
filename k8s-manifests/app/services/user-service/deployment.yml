@@ -29,7 +29,7 @@ spec:
               name: user-service-secrets
               key: DATABASE_URL
         - name: REDIS_URL
-          value: redis://redis-service:6379
+          value: redis://redis:6379
         - name: KEYCLOAK_URL
           value: http://keycloak:8080
         - name: KEYCLOAK_REALM

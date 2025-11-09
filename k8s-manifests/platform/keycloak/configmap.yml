@@ -17,6 +17,10 @@ data:
       "resetPasswordAllowed": true,
       "sslRequired": "none",
 
+      "attributes": {
+        "frontendUrl": "https://34.175.7.70:30443"
+      },
+
       "clients": [
         {
           "clientId": "user-service",
