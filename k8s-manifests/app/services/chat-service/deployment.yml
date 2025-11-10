@@ -49,7 +49,7 @@ spec:
               name: chat-message-secret
               key: postgres-pass-secret
         - name: REDIS_HOST
-          value: redis-service
+          value: redis-master
         - name: REDIS_PORT
           value: "6379"
         - name: USER_HOST
