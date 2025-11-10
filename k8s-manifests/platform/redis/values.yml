@@ -1,5 +1,5 @@
 ---
-architecture: replication # Options: standalone, replication, sentinel
+architecture: sentinel
 sentinel:
   enabled: true
   quorum: 1
