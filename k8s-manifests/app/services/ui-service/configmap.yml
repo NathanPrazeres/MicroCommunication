@@ -7,11 +7,11 @@ metadata:
 data:
   config.json: |
     {
-      "VITE_CHAT_HOST": "34.175.7.70",
+      "VITE_CHAT_HOST": "34.175.160.31",
       "VITE_CHAT_PORT": "30443",
-      "VITE_AUTH_HOST": "34.175.7.70",
+      "VITE_AUTH_HOST": "34.175.160.31",
       "VITE_AUTH_PORT": "30443",
-      "VITE_USER_HOST": "34.175.7.70",
+      "VITE_USER_HOST": "34.175.160.31",
       "VITE_USER_PORT": "30443",
       "VITE_KEYCLOAK_REALM": "app",
       "VITE_KEYCLOAK_CLIENT_ID": "ui-service"
