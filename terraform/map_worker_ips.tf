@@ -12,6 +12,8 @@ resource "null_resource" "inject_configs" {
   provisioner "local-exec" {
     command = <<EOT
 
+      sed -i 's|"frontendUrl": "https://[0-9.]*:[0-9]*/"|"baseUrl": "https://${local.first_worker_ip}:${local.traefik_nodeport}/"|' \
+        ../k8s-manifests/platform/keycloak/configmap.yml
       sed -i 's|"https://[0-9.]*:[0-9]*/\*"|"https://${local.first_worker_ip}:${local.traefik_nodeport}/*"|' \
         ../k8s-manifests/platform/keycloak/configmap.yml
       sed -i 's|"baseUrl": "https://[0-9.]*:[0-9]*/"|"baseUrl": "https://${local.first_worker_ip}:${local.traefik_nodeport}/"|' \

@@ -49,6 +49,10 @@ spec:
                   name: keycloak-secrets
                   key: db-password
 
+            - name: KC_PROXY
+              value: "edge"
+            - name: KC_HOSTNAME_STRICT_BACKCHANNEL
+              value: "false"
             - name: KC_HOSTNAME
               value: "keycloak"
             - name: KC_HOSTNAME_PORT
