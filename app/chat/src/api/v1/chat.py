@@ -66,7 +66,8 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
         if user_id is None:
             raise ValueError() # trigger the except block
     except:
-        logger.warning("WebSocket connection rejected: invalid token")
+        logger.error("WebSocket connection rejected: invalid token")
+        logger.warning("Claims:", claims)
         websocket_connections_total.labels(endpoint="/api/v1/ws", status="rejected").inc()
         await websocket.close(code=1008)
         return
