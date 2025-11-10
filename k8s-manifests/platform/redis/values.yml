@@ -1,8 +1,8 @@
 ---
-architecture: replication
-sentinel:
-  enabled: true
-  quorum: 1
+architecture: standalone
+# sentinel:
+#   enabled: true
+#   quorum: 1
 
 auth:
   enabled: false  # Enable in production with password
@@ -25,10 +25,10 @@ master:
     maxmemory-policy allkeys-lru
     save ""
 
-replica:
-  replicaCount: 2
-  persistence:
-    enabled: false
+# replica:
+#   replicaCount: 2
+#   persistence:
+#     enabled: false
 
 metrics:
   enabled: true
