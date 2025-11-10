@@ -1,5 +1,5 @@
 ---
-architecture: sentinel
+architecture: replication
 sentinel:
   enabled: true
   quorum: 1
