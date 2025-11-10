@@ -8,6 +8,8 @@ mod models;
 mod repositories;
 mod services;
 
+use reqwest::ClientBuilder as ReqwestClientBuilder;
+
 use anyhow::{Ok, Result};
 use axum::{Router, routing::get};
 use bb8_redis::RedisConnectionManager;
@@ -147,7 +149,13 @@ pub async fn init_jwk_manager(config: Config) -> Result<JwksManager> {
     );
 
     let retry_policy = ExponentialBackoff::builder().build_with_max_retries(10);
-    let client = ClientBuilder::new(reqwest::Client::new())
+
+    let inner = ReqwestClientBuilder::new()
+        .danger_accept_invalid_certs(true)
+        .build()
+        .unwrap();
+
+    let client = ClientBuilder::new(inner)
         .with(RetryTransientMiddleware::new_with_policy(retry_policy))
         .build();
 
