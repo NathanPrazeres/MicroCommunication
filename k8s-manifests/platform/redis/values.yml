@@ -2,7 +2,7 @@
 architecture: replication # Options: standalone, replication, sentinel
 sentinel:
   enabled: true
-  quorum: 2
+  quorum: 1
 
 auth:
   enabled: false  # Enable in production with password
@@ -23,7 +23,6 @@ master:
   configuration: |-
     maxmemory 256mb
     maxmemory-policy allkeys-lru
-    appendonly yes
     save ""
 
 replica:
