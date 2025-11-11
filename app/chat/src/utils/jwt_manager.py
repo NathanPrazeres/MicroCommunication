@@ -4,7 +4,6 @@ import jwt
 import asyncio
 import logging
 import ssl
-import urllib.request
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +27,6 @@ class JwtManager():
             ssl_context.check_hostname = False
             ssl_context.verify_mode = ssl.CERT_NONE
 
-            logger.info("JWK URI:", jwks_uri)
             self.jwks_client = jwt.PyJWKClient(jwks_uri, ssl_context=ssl_context)
 
     async def decode_token(self, token: str):
