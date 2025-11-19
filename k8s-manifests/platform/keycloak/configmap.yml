@@ -18,7 +18,7 @@ data:
       "sslRequired": "none",
 
       "attributes": {
-        "baseUrl": "https://34.175.78.81:30443/"
+        "baseUrl": "https://34.175.96.49:30443/"
       },
 
       "clients": [
@@ -62,12 +62,12 @@ data:
           "standardFlowEnabled": true,
           "directAccessGrantsEnabled": false,
           "redirectUris": [
-            "https://34.175.78.81:30443/*"
+            "https://34.175.96.49:30443/*"
           ],
           "webOrigins": [
             "*"
           ],
-          "baseUrl": "https://34.175.78.81:30443/"
+          "baseUrl": "https://34.175.96.49:30443/"
         }
       ]
     }
